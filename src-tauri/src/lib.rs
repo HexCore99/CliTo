@@ -2,6 +2,7 @@
 
 mod db;
 mod tasks;
+mod ui_config;
 
 #[tauri::command]
 fn greet(name: &str) -> String {

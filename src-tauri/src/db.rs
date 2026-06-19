@@ -9,6 +9,10 @@ pub fn get_connection(app: &tauri::AppHandle) -> Result<Connection, String> {
 
     std::fs::create_dir_all(&app_data_dir).map_err(|err| err.to_string())?;
     let db_path = app_data_dir.join("todo.db");
+
+    println!("{:?}", db_path);
+    println!("{}", db_path.display());
+
     let conn = Connection::open(db_path).map_err(|err| err.to_string())?; // ? if Err, return early
 
     conn.execute(

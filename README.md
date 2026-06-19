@@ -95,15 +95,3 @@ CliTo stores tasks locally in a SQLite database named `todo.db` inside the app d
 ```bash
 bun run tauri build
 ```
-
-2. Create a GitHub release tag, for example:
-
-```text
-v0.1.0
-```
-
-3. Upload the generated Windows installer files from `src-tauri/target/release/bundle/`.
-
-## License
-
-No license has been specified yet.
