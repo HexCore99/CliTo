@@ -2,6 +2,7 @@
 
 mod db;
 mod tasks;
+mod ui_config;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -18,7 +19,10 @@ pub fn run() {
             greet,
             tasks::get_tasks,
             tasks::create_task,
-            tasks::delete_task
+            tasks::delete_task,
+            tasks::update_task_status,
+            ui_config::get_ui_config,
+            ui_config::save_ui_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

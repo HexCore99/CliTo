@@ -8,6 +8,7 @@ export default function CreateTask({ onAdd }) {
     const task = {
       id: Date.now(),
       name: taskName,
+      status: "todo",
     };
 
     onAdd(task);

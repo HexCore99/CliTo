@@ -5,17 +5,14 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Task from "./components/Task";
-import CreateTask from "./components/CreateTask";
+import TaskBoard from "./components/TaskBoard";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-
 export default function App() {
   const [tasks, setTasks] = useState([]);
+  const [uiConfig, setUiConfig] = useState(null);
 
   async function onDelete(taskId) {
-    console.log("creating task");
-    console.log(taskId);
     await invoke("delete_task", { id: taskId });
     setTasks(tasks.filter((task) => task.id !== taskId));
   }
@@ -23,20 +20,62 @@ export default function App() {
     const name = await invoke("create_task", { name: task.name });
     setTasks([...tasks, task]);
   }
-  console.log(tasks);
+
+  async function saveUiConfig(nextConfig) {
+    setUiConfig(nextConfig);
+    await invoke("save_ui_config", { config: nextConfig });
+  }
+
+  function setSidebarOpen(open) {
+    saveUiConfig({
+      ...uiConfig,
+      sidebar: {
+        ...uiConfig.sidebar,
+        open: open,
+      },
+    });
+  }
+
+  function setNavItemOpen(title, open) {
+    saveUiConfig({
+      ...uiConfig,
+      sidebar: {
+        ...uiConfig.sidebar,
+        navOpenItems: {
+          ...uiConfig.sidebar.navOpenItems,
+          [title]: open,
+        },
+      },
+    });
+  }
 
   useEffect(() => {
-    async function loadTasks() {
+    async function loadInitialTasks() {
       const savedTasks = await invoke("get_tasks");
       setTasks(savedTasks);
     }
-    loadTasks();
+
+    async function loadInitialConfig() {
+      const savedUiConfig = await invoke("get_ui_config");
+      setUiConfig(savedUiConfig);
+    }
+
+    loadInitialTasks();
+    loadInitialConfig();
   }, []);
+
+  if (!uiConfig) return null;
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
-        <AppSidebar />
+      <SidebarProvider
+        open={uiConfig.sidebar.open}
+        onOpenChange={setSidebarOpen}
+      >
+        <AppSidebar
+          sidebarConfig={uiConfig.sidebar}
+          onNavItemOpenChange={setNavItemOpen}
+        />
 
         <SidebarInset>
           <header className="flex h-14 items-center gap-3 border-b px-4">
@@ -49,13 +88,13 @@ export default function App() {
             <p className="text-muted-foreground">
               Your task manager content will go here.
             </p>
-            <div className="flex-col space-y-4">
-              <CreateTask onAdd={createTask} />
-              {tasks.map((task) => (
-                <Task key={task.id} task={task} onDelete={onDelete} />
-              ))}
-            </div>
           </main>
+          <TaskBoard
+            tasks={tasks}
+            setTasks={setTasks}
+            onAdd={createTask}
+            onDelete={onDelete}
+          />
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
