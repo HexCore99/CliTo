@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::PathBuf};
 use tauri::Manager;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct UiConfig {
     pub sidebar: SidebarConfig,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SidebarConfig {
     pub open: bool,
@@ -48,12 +48,12 @@ pub fn get_ui_config(app: tauri::AppHandle) -> Result<UiConfig, String> {
     }
 
     let config = default_ui_config();
-    save_ui_config(app, &config)?;
+    save_ui_config(app, config.clone())?;
     Ok(config)
 }
 
 #[tauri::command]
-pub fn save_ui_config(app: tauri::AppHandle, config: &UiConfig) -> Result<(), String> {
+pub fn save_ui_config(app: tauri::AppHandle, config: UiConfig) -> Result<(), String> {
     let path = config_path(&app)?;
     let yaml = serde_yaml::to_string(&config).map_err(|err| err.to_string())?;
     fs::write(path, yaml).map_err(|err| err.to_string())?;

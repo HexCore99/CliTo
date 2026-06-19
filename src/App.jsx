@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 export default function App() {
   const [tasks, setTasks] = useState([]);
+  const [uiConfig, setUiConfig] = useState(null);
 
   async function onDelete(taskId) {
     await invoke("delete_task", { id: taskId });
@@ -19,20 +20,62 @@ export default function App() {
     const name = await invoke("create_task", { name: task.name });
     setTasks([...tasks, task]);
   }
-  console.log(tasks);
+
+  async function saveUiConfig(nextConfig) {
+    setUiConfig(nextConfig);
+    await invoke("save_ui_config", { config: nextConfig });
+  }
+
+  function setSidebarOpen(open) {
+    saveUiConfig({
+      ...uiConfig,
+      sidebar: {
+        ...uiConfig.sidebar,
+        open: open,
+      },
+    });
+  }
+
+  function setNavItemOpen(title, open) {
+    saveUiConfig({
+      ...uiConfig,
+      sidebar: {
+        ...uiConfig.sidebar,
+        navOpenItems: {
+          ...uiConfig.sidebar.navOpenItems,
+          [title]: open,
+        },
+      },
+    });
+  }
 
   useEffect(() => {
-    async function loadTasks() {
+    async function loadInitialTasks() {
       const savedTasks = await invoke("get_tasks");
       setTasks(savedTasks);
     }
-    loadTasks();
+
+    async function loadInitialConfig() {
+      const savedUiConfig = await invoke("get_ui_config");
+      setUiConfig(savedUiConfig);
+    }
+
+    loadInitialTasks();
+    loadInitialConfig();
   }, []);
+
+  if (!uiConfig) return null;
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
-        <AppSidebar />
+      <SidebarProvider
+        open={uiConfig.sidebar.open}
+        onOpenChange={setSidebarOpen}
+      >
+        <AppSidebar
+          sidebarConfig={uiConfig.sidebar}
+          onNavItemOpenChange={setNavItemOpen}
+        />
 
         <SidebarInset>
           <header className="flex h-14 items-center gap-3 border-b px-4">

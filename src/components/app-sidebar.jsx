@@ -82,14 +82,22 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }) {
+export function AppSidebar({ sidebarConfig, onNavItemOpenChange, ...props }) {
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar
+      collapsible="icon"
+      variant={sidebarConfig?.openAndFloat ? "floating" : "sidebar"}
+      {...props}
+    >
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain
+          items={data.navMain}
+          openItems={sidebarConfig?.navOpenItems ?? {}}
+          onOpenItemChange={onNavItemOpenChange}
+        />
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
