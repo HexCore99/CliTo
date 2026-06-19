@@ -1,5 +1,5 @@
 [package]
-name = "tutorial-1"
+name = "CliTo"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]

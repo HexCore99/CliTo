@@ -48,11 +48,11 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "Today",
+          title: "Todo",
           url: "#",
         },
         {
-          title: "Tomorrow",
+          title: "In Progress",
           url: "#",
         },
         {
@@ -67,11 +67,7 @@ const data = {
       icon: <Settings2Icon />,
       items: [
         {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Theme",
+          title: "Coming Soon",
           url: "#",
         },
       ],
@@ -79,19 +75,9 @@ const data = {
   ],
   projects: [
     {
-      name: "Work",
+      name: "Coming Soon",
       url: "#",
       icon: <FrameIcon />,
-    },
-    {
-      name: "Personal",
-      url: "#",
-      icon: <PieChartIcon />,
-    },
-    {
-      name: "Grocery",
-      url: "#",
-      icon: <MapIcon />,
     },
   ],
 };

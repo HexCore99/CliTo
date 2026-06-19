@@ -5,17 +5,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Task from "./components/Task";
-import CreateTask from "./components/CreateTask";
+import TaskBoard from "./components/TaskBoard";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-
 export default function App() {
   const [tasks, setTasks] = useState([]);
 
   async function onDelete(taskId) {
-    console.log("creating task");
-    console.log(taskId);
     await invoke("delete_task", { id: taskId });
     setTasks(tasks.filter((task) => task.id !== taskId));
   }
@@ -49,13 +45,13 @@ export default function App() {
             <p className="text-muted-foreground">
               Your task manager content will go here.
             </p>
-            <div className="flex-col space-y-4">
-              <CreateTask onAdd={createTask} />
-              {tasks.map((task) => (
-                <Task key={task.id} task={task} onDelete={onDelete} />
-              ))}
-            </div>
           </main>
+          <TaskBoard
+            tasks={tasks}
+            setTasks={setTasks}
+            onAdd={createTask}
+            onDelete={onDelete}
+          />
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
