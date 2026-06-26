@@ -11,7 +11,7 @@ const columns = [
 
 export default function TaskBoard({ tasks, setTasks, onAdd, onDelete }) {
   return (
-    <div className="mt-6 grid grid-cols-3">
+    <div className="mt-6 grid grid-cols-3 max-[1050px]:grid-cols-2 max-[620px]:grid-cols-1">
       {columns.map((column) => (
         <TaskColumn
           key={column.status}
