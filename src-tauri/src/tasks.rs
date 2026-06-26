@@ -1,9 +1,5 @@
-use core::task;
-
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
-use serde_json::to_string;
-use tauri::utils::config::Position;
 
 // crate means current Rust Project/Module. crate = root
 use crate::db::get_connection;
@@ -77,7 +73,7 @@ pub fn update_position(app:tauri::AppHandle,tasks: Vec<Task>)-> Result<(),String
 
     for (pos,task) in tasks.iter().enumerate() {
         conn.execute("UPDATE tasks SET position = ? WHERE id = ?",
-        params![pos,task.id])
+        params![pos as i32,task.id])
         .map_err(|err| err.to_string())?;
     } 
 
