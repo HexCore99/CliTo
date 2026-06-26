@@ -26,6 +26,15 @@ export default function App() {
     await invoke("save_ui_config", { config: nextConfig });
   }
 
+  async function moveTask(taskId, status) {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId ? { ...task, status } : task,
+      ),
+    );
+
+    await invoke("update_task_status", { id: taskId, status });
+  }
   function setSidebarOpen(open) {
     saveUiConfig({
       ...uiConfig,
@@ -94,6 +103,7 @@ export default function App() {
             setTasks={setTasks}
             onAdd={createTask}
             onDelete={onDelete}
+            onDropTask={moveTask}
           />
         </SidebarInset>
       </SidebarProvider>
