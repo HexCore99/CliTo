@@ -20,7 +20,8 @@ pub fn get_connection(app: &tauri::AppHandle) -> Result<Connection, String> {
         CREATE TABLE IF NOT EXISTS tasks(
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'todo')",
+        status TEXT NOT NULL DEFAULT 'todo',
+        position INTEGER NOT NULL DEFAULT 0)",
         [],
     )
     .map_err(|err| err.to_string())?;

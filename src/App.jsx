@@ -26,15 +26,22 @@ export default function App() {
     await invoke("save_ui_config", { config: nextConfig });
   }
 
-  async function moveTask(taskId, status) {
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === taskId ? { ...task, status } : task,
-      ),
-    );
 
-    await invoke("update_task_status", { id: taskId, status });
-  }
+  useEffect(() => {
+    async function loadInitialTasks() {
+      const savedTasks = await invoke("get_tasks");
+      setTasks(savedTasks);
+    }
+
+    async function loadInitialConfig() {
+      const savedUiConfig = await invoke("get_ui_config");
+      setUiConfig(savedUiConfig);
+    }
+
+    loadInitialTasks();
+    loadInitialConfig();
+  }, []);
+
   function setSidebarOpen(open) {
     saveUiConfig({
       ...uiConfig,
@@ -57,21 +64,6 @@ export default function App() {
       },
     });
   }
-
-  useEffect(() => {
-    async function loadInitialTasks() {
-      const savedTasks = await invoke("get_tasks");
-      setTasks(savedTasks);
-    }
-
-    async function loadInitialConfig() {
-      const savedUiConfig = await invoke("get_ui_config");
-      setUiConfig(savedUiConfig);
-    }
-
-    loadInitialTasks();
-    loadInitialConfig();
-  }, []);
 
   if (!uiConfig) return null;
 
@@ -103,7 +95,6 @@ export default function App() {
             setTasks={setTasks}
             onAdd={createTask}
             onDelete={onDelete}
-            onDropTask={moveTask}
           />
         </SidebarInset>
       </SidebarProvider>
