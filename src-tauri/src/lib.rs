@@ -20,6 +20,7 @@ pub fn run() {
             tasks::get_tasks,
             tasks::create_task,
             tasks::delete_task,
+            tasks::update_position,
             tasks::update_task_status,
             ui_config::get_ui_config,
             ui_config::save_ui_config

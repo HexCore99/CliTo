@@ -1,15 +1,16 @@
 use rusqlite::params;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 // crate means current Rust Project/Module. crate = root
 use crate::db::get_connection;
 
 //pass extra info to compiler.
-#[derive(Serialize)] //Tell the compiler that, task can be converted to JSON.
+#[derive(Serialize,Deserialize)] //Tell the compiler that, task can be converted to JSON.
 pub struct Task {
     id: i64,
     name: String,
     status: String,
+    position: i32
 }
 
 #[tauri::command] // allow this function to be called from the frontend
@@ -17,7 +18,7 @@ pub fn get_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
     let conn = get_connection(&app)?; // why not map_err here?
 
     let mut stmt = conn
-        .prepare("SELECT id,name,status FROM tasks ORDER BY id DESC")
+        .prepare("SELECT id,name,status,position FROM tasks ORDER BY position ASC")
         .map_err(|e| e.to_string())?;
 
     let tasks = stmt
@@ -26,6 +27,7 @@ pub fn get_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
                 id: row.get(0)?,
                 name: row.get(1)?,
                 status: row.get(2)?,
+                position:row.get(3)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -37,25 +39,49 @@ pub fn get_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
 
 #[tauri::command]
 pub fn create_task(app: tauri::AppHandle, name: String) -> Result<Task, String> {
-    let conn = get_connection(&app)?;
+    let mut  conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|e|e.to_string())?;
 
     let id = chrono::Utc::now().timestamp_millis(); // chrono -> time library
-    conn.execute(
+
+    // Update the position by 1
+    tx.execute("UPDATE tasks SET position = position + 1", [],).map_err(|e|e.to_string())?;
+
+    // insert with new pos
+    tx.execute(
         "INSERT INTO tasks
-                 (id,name,status)
-                 VALUES(?,?,?)",
-        params![id, name, "todo"],
+                 (id,name,status,position)
+                 VALUES(?,?,?,?)",
+        params![id, name, "todo",0],
     )
     .map_err(|err| err.to_string())?;
+
+    tx.commit().map_err(|e|e.to_string())?;
+
     Ok(Task {
         id,
         name,
         status: "todo".to_string(), //why ??
+        position:0
     })
 }
 
+
 #[tauri::command]
-pub fn update_task_status(app: tauri::AppHandle, id: i64, status: String) -> Result<(), String> {
+pub fn update_position(app:tauri::AppHandle,tasks: Vec<Task>)-> Result<(),String>{
+    let conn = get_connection(&app)?;
+
+    for (pos,task) in tasks.iter().enumerate() {
+        conn.execute("UPDATE tasks SET position = ? WHERE id = ?",
+        params![pos as i32,task.id])
+        .map_err(|err| err.to_string())?;
+    } 
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn update_task_status(app: tauri::AppHandle,id:i64,status: String) -> Result<(), String> {
     let conn = get_connection(&app)?;
     let sql = "UPDATE tasks
                 SET status = ?

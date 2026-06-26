@@ -18,13 +18,29 @@ export default function App() {
   }
   async function createTask(task) {
     const name = await invoke("create_task", { name: task.name });
-    setTasks([...tasks, task]);
+    const updatedTaskList = await invoke("get_tasks");
+    setTasks(updatedTaskList);
   }
 
   async function saveUiConfig(nextConfig) {
     setUiConfig(nextConfig);
     await invoke("save_ui_config", { config: nextConfig });
   }
+
+  useEffect(() => {
+    async function loadInitialTasks() {
+      const savedTasks = await invoke("get_tasks");
+      setTasks(savedTasks);
+    }
+
+    async function loadInitialConfig() {
+      const savedUiConfig = await invoke("get_ui_config");
+      setUiConfig(savedUiConfig);
+    }
+
+    loadInitialTasks();
+    loadInitialConfig();
+  }, []);
 
   function setSidebarOpen(open) {
     saveUiConfig({
@@ -48,21 +64,6 @@ export default function App() {
       },
     });
   }
-
-  useEffect(() => {
-    async function loadInitialTasks() {
-      const savedTasks = await invoke("get_tasks");
-      setTasks(savedTasks);
-    }
-
-    async function loadInitialConfig() {
-      const savedUiConfig = await invoke("get_ui_config");
-      setUiConfig(savedUiConfig);
-    }
-
-    loadInitialTasks();
-    loadInitialConfig();
-  }, []);
 
   if (!uiConfig) return null;
 
