@@ -17,7 +17,7 @@ const columns = [
 ];
 
 export default function TaskBoard({ tasks, setTasks, onAdd, onDelete }) {
-  function handleDragEnd(event) {
+  async function handleDragEnd(event) {
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
@@ -27,9 +27,7 @@ export default function TaskBoard({ tasks, setTasks, onAdd, onDelete }) {
     const reorderedTasks = arrayMove(tasks, oldIdx, newIdx);
 
     setTasks([...reorderedTasks]);
-    console.log(" id is what? ", active.id);
-    console.log(newIdx);
-    invoke("update_position", { tasks: reorderedTasks });
+    await invoke("update_position", { tasks: reorderedTasks });
   }
 
   return (
