@@ -1,8 +1,7 @@
 import React from "react";
 import { SquarePen, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-
+import { useTaskStore } from "@/stores/useTaskStore";
 const taskColor = {
   todo: "bg-orange-100 border-orange-300",
   "in-progress": "bg-blue-100 border-blue-300",
@@ -10,6 +9,8 @@ const taskColor = {
 };
 
 export default function Task({ task, onDelete }) {
+  const changeTaskStatus = useTaskStore((state) => state.changeTaskStatus);
+
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
       id: String(task.id),
@@ -30,7 +31,17 @@ export default function Task({ task, onDelete }) {
       {...listeners}
       className={`${taskColor[task.status ?? "todo"]}  shadow-sm h-fit w-full px-3 py-3 rounded-lg hover:shadow-lg cursor-grab active:cursor-grabbing`}
     >
-      <div className={`flex justify-between gap-3 `}>
+      <div className={`flex items-center justify-between gap-3 `}>
+        <input
+          type="checkbox"
+          checked={task.status === "completed"}
+          onPointerDown={(event) => event.stopPropagation()}
+          onChange={(event) => {
+            event.target.checked
+              ? changeTaskStatus(task.id, "completed")
+              : changeTaskStatus(task.id, "todo");
+          }}
+        />
         <p className="min-w-0 flex-1 break-words ">{task.name}</p>
         {/* <SquarePen className="cursor-pointer hover:text-blue-500" size={20} />*/}
         <button

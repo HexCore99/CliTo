@@ -1,4 +1,4 @@
-use rusqlite::params;
+use rusqlite::{ params};
 use serde::{Deserialize, Serialize};
 
 // crate means current Rust Project/Module. crate = root
@@ -69,19 +69,53 @@ pub fn create_task(app: tauri::AppHandle, name: String) -> Result<Task, String> 
 
 #[tauri::command]
 pub fn update_position(app:tauri::AppHandle,tasks: Vec<Task>)-> Result<(),String>{
-    let conn = get_connection(&app)?;
+    let mut  conn = get_connection(&app)?;
+    let tx = conn.transaction()
+    .map_err(|err| err.to_string())?;
+    
+    let mut todo_position:i32 = 0;
+    let mut in_progress_position:i32 = 0;
+    let mut complete_position:i32 = 0;
 
-    for (pos,task) in tasks.iter().enumerate() {
-        conn.execute("UPDATE tasks SET position = ? WHERE id = ?",
-        params![pos as i32,task.id])
+    for task in tasks {
+
+        let position = match task.status.as_str() {
+           "todo" => {
+            let current = todo_position;
+            todo_position+=1;
+            current
+           } 
+           "in-progress" => {
+
+            let current = in_progress_position ;
+            in_progress_position+=1;
+            current
+           }
+
+           "completed" => {
+            let current = complete_position;
+            complete_position+=1;
+            current
+           }
+           unknown =>{
+            return Err(format!("Unknown task status:{unknown}"));
+           }
+        };
+
+        tx.execute("UPDATE tasks SET position = ? WHERE id = ?",
+        params![position,task.id])
         .map_err(|err| err.to_string())?;
     } 
+    tx.commit()
+    .map_err(|err| err.to_string())?;
 
     Ok(())
 }
 
+
 #[tauri::command]
 pub fn update_task_status(app: tauri::AppHandle,id:i64,status: String) -> Result<(), String> {
+
     let conn = get_connection(&app)?;
     let sql = "UPDATE tasks
                 SET status = ?
@@ -90,6 +124,7 @@ pub fn update_task_status(app: tauri::AppHandle,id:i64,status: String) -> Result
         .map_err(|err| err.to_string())?;
 
     Ok(())
+
 }
 
 #[tauri::command]

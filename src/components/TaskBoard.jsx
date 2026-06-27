@@ -6,6 +6,7 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+import { useTaskStore } from "@/stores/useTaskStore";
 import TaskColumn from "./TaskColumn";
 import Task from "./Task";
 import CreateTask from "./CreateTask";
@@ -16,7 +17,15 @@ const columns = [
   { title: "Completed", status: "completed" },
 ];
 
-export default function TaskBoard({ tasks, setTasks, onAdd, onDelete }) {
+export default function TaskBoard() {
+  const tasks = useTaskStore((state) => state.tasks);
+
+  const setTasks = useTaskStore((state) => state.setTasks);
+
+  const createTask = useTaskStore((state) => state.createTask);
+
+  const deleteTask = useTaskStore((state) => state.deleteTask);
+
   function getDropStatus(overId, taskList) {
     //can be task or column
 
@@ -95,14 +104,14 @@ export default function TaskBoard({ tasks, setTasks, onAdd, onDelete }) {
               title={column.title}
               status={column.status}
             >
-              {column.status === "todo" && <CreateTask onAdd={onAdd} />}
+              {column.status === "todo" && <CreateTask onAdd={createTask} />}
 
               <SortableContext
                 items={columnTasks.map((task) => String(task.id))}
                 strategy={verticalListSortingStrategy}
               >
                 {columnTasks.map((task) => (
-                  <Task key={task.id} task={task} onDelete={onDelete} />
+                  <Task key={task.id} task={task} onDelete={deleteTask} />
                 ))}
               </SortableContext>
             </TaskColumn>
