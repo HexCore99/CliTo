@@ -8,19 +8,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import TaskBoard from "./components/TaskBoard";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { useTaskStore } from "./stores/useTaskStore";
+
 export default function App() {
-  const [tasks, setTasks] = useState([]);
   const [uiConfig, setUiConfig] = useState(null);
 
-  async function onDelete(taskId) {
-    await invoke("delete_task", { id: taskId });
-    setTasks(tasks.filter((task) => task.id !== taskId));
-  }
-  async function createTask(task) {
-    const name = await invoke("create_task", { name: task.name });
-    const updatedTaskList = await invoke("get_tasks");
-    setTasks(updatedTaskList);
-  }
+  const loadTasks = useTaskStore((state) => state.loadTasks);
 
   async function saveUiConfig(nextConfig) {
     setUiConfig(nextConfig);
@@ -28,19 +21,14 @@ export default function App() {
   }
 
   useEffect(() => {
-    async function loadInitialTasks() {
-      const savedTasks = await invoke("get_tasks");
-      setTasks(savedTasks);
-    }
-
     async function loadInitialConfig() {
       const savedUiConfig = await invoke("get_ui_config");
       setUiConfig(savedUiConfig);
     }
 
-    loadInitialTasks();
+    loadTasks();
     loadInitialConfig();
-  }, []);
+  }, [loadTasks]);
 
   function setSidebarOpen(open) {
     saveUiConfig({
@@ -90,12 +78,7 @@ export default function App() {
               Your task manager content will go here.
             </p>
           </main>
-          <TaskBoard
-            tasks={tasks}
-            setTasks={setTasks}
-            onAdd={createTask}
-            onDelete={onDelete}
-          />
+          <TaskBoard />
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
