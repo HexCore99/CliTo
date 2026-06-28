@@ -10,7 +10,10 @@ pub struct Task {
     id: i64,
     name: String,
     status: String,
-    position: i32
+    position: i32,
+    priority:i32,
+    due_date:Option<String>,
+    description:Option<String>
 }
 
 #[tauri::command] // allow this function to be called from the frontend
@@ -18,7 +21,7 @@ pub fn get_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
     let conn = get_connection(&app)?; // why not map_err here?
 
     let mut stmt = conn
-        .prepare("SELECT id,name,status,position FROM tasks ORDER BY position ASC")
+        .prepare("SELECT id,name,status,position,priority,due_date,description FROM tasks ORDER BY position ASC")
         .map_err(|e| e.to_string())?;
 
     let tasks = stmt
@@ -28,6 +31,9 @@ pub fn get_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
                 name: row.get(1)?,
                 status: row.get(2)?,
                 position:row.get(3)?,
+                priority:row.get(4)?,
+                due_date:row.get(5)?,
+                description:row.get(6)?
             })
         })
         .map_err(|e| e.to_string())?
@@ -38,7 +44,14 @@ pub fn get_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
 }
 
 #[tauri::command]
-pub fn create_task(app: tauri::AppHandle, name: String) -> Result<Task, String> {
+pub fn create_task(
+    app: tauri::AppHandle,
+    name: String,
+    priority:i32,
+    due_date:Option<String>,
+    description:Option<String>
+ ) -> Result<(),String> {
+
     let mut  conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|e|e.to_string())?;
 
@@ -50,20 +63,15 @@ pub fn create_task(app: tauri::AppHandle, name: String) -> Result<Task, String> 
     // insert with new pos
     tx.execute(
         "INSERT INTO tasks
-                 (id,name,status,position)
-                 VALUES(?,?,?,?)",
-        params![id, name, "todo",0],
+                 (id,name,position,priority,due_date,description)
+                 VALUES(?,?,?,?,?,?)",
+        params![id, name,0,priority,due_date,description],
     )
     .map_err(|err| err.to_string())?;
 
     tx.commit().map_err(|e|e.to_string())?;
 
-    Ok(Task {
-        id,
-        name,
-        status: "todo".to_string(), //why ??
-        position:0
-    })
+    Ok(())
 }
 
 
@@ -136,6 +144,51 @@ pub fn delete_task(app: tauri::AppHandle, id: i64) -> Result<(), String> {
                  WHERE id = ?",
         params![id],
     )
+    .map_err(|err| err.to_string())?;
+
+    Ok(())
+}
+
+
+#[tauri::command]
+pub fn set_due_date(
+    app:tauri::AppHandle,
+    id:i64,
+    due_date:Option<String>
+) -> Result<(),String>{
+        let conn = get_connection(&app)
+        .map_err(|err| err.to_string())?;
+
+    conn.execute("UPDATE tasks SET due_date = ? WHERE id = ?", params![due_date,id])
+    .map_err(|err| err.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_priority(
+    app:tauri::AppHandle,
+    id:i64,
+    priority:i32) -> Result<(),String>{
+        let conn = get_connection(&app)
+        .map_err(|err| err.to_string())?;
+
+    conn.execute("UPDATE tasks SET priority = ? WHERE id = ?", params![priority,id])
+    .map_err(|err| err.to_string())?;
+
+    Ok(())
+}
+
+
+#[tauri::command]
+pub fn set_description(
+    app:tauri::AppHandle,
+    id:i64,
+    description:Option<String>) -> Result<(),String>{
+        let conn = get_connection(&app)
+        .map_err(|err| err.to_string())?;
+
+    conn.execute("UPDATE tasks SET description = ? WHERE id = ?", params![description,id])
     .map_err(|err| err.to_string())?;
 
     Ok(())

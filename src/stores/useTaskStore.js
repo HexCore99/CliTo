@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { newMenu } from "@tauri-apps/api/menu/base";
 import { create } from "zustand";
 
 export const useTaskStore = create((set, get) => ({
@@ -11,6 +12,16 @@ export const useTaskStore = create((set, get) => ({
     }));
   },
 
+  updateTaskField: (taskId, fieldName, newValue) => {
+    const id = Number(taskId);
+
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        Number(task.id) === id ? { ...task, [fieldName]: newValue } : task,
+      ),
+    }));
+  },
+
   loadTasks: async () => {
     const savedTasks = await invoke("get_tasks");
     set({
@@ -19,7 +30,17 @@ export const useTaskStore = create((set, get) => ({
   },
 
   createTask: async (task) => {
-    await invoke("create_task", { name: task.name });
+    const name = task.name;
+    const priority = task.priority ?? 4;
+    const due_date = task.due_date ?? null;
+    const description = task.description ?? null;
+
+    await invoke("create_task", {
+      name: name,
+      priority: priority,
+      dueDate: due_date,
+      description: description,
+    });
 
     await get().loadTasks();
   },
@@ -39,11 +60,13 @@ export const useTaskStore = create((set, get) => ({
       status: newStatus,
     });
 
-    set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task.id === id ? { ...task, status: newStatus } : task,
-      ),
-    }));
+    get().updateTaskField(taskId, "status", newStatus);
+
+    // set((state) => ({
+    //   tasks: state.tasks.map((task) =>
+    //     task.id === id ? { ...task, status: newStatus } : task,
+    //   ),
+    // }));
   },
 
   changeTaskStatus: async (taskId, status) => {
@@ -62,5 +85,34 @@ export const useTaskStore = create((set, get) => ({
     await invoke("update_position", { tasks: updatedTasks });
 
     await get().loadTasks();
+  },
+
+  set_priority: async (taskId, priority) => {
+    const id = Number(taskId);
+    const newPriority = Number(priority);
+
+    await invoke("set_priority", {
+      id: id,
+      priority: newPriority,
+    });
+
+    get().updateTaskField(taskId, "priority", newPriority);
+    // set((state) => ({
+    //   tasks: state.tasks.map((task) =>
+    //     Number(task.id) === id ? { ...task, priority: newPriority } : task,
+    //   ),
+    // }));
+  },
+
+  set_date: async (taskId, newDate) => {
+    const id = Number(taskId);
+    const dueDate = newDate ?? null;
+
+    await invoke("set_due_date", {
+      id,
+      dueDate,
+    });
+
+    get().updateTaskField(id, "due_date", dueDate);
   },
 }));

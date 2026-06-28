@@ -22,6 +22,9 @@ pub fn run() {
             tasks::delete_task,
             tasks::update_position,
             tasks::update_task_status,
+            tasks::set_due_date,
+            tasks::set_priority,
+            tasks::set_description,
             ui_config::get_ui_config,
             ui_config::save_ui_config
         ])

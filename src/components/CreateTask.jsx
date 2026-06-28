@@ -9,6 +9,10 @@ export default function CreateTask({ onAdd }) {
       id: Date.now(),
       name: taskName,
       status: "todo",
+      position: 0,
+      priority: 4,
+      due_date: null,
+      description: null,
     };
 
     onAdd(task);

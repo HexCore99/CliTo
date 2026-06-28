@@ -1,97 +1,129 @@
 # CliTo
 
-CliTo is a small desktop todo app built with Tauri, React, and SQLite. It gives you a simple local task list that runs as a native Windows app.
+CliTo is a local-first personal task manager for organizing work through a
+simple Kanban workflow. It is built as a lightweight desktop application with
+Tauri, React, Rust, and SQLite.
 
 ## Features
 
-- Create tasks
-- View saved tasks
-- Delete tasks
-- Local SQLite storage
-- Native desktop build with Tauri
-- Sidebar-based interface
+- Organize tasks across **Todo**, **In Progress**, and **Completed** columns
+- Create and delete tasks
+- Move tasks between columns with drag and drop
+- Reorder tasks within the board
+- Mark tasks as complete with a checkbox
+- Assign one of four priority levels
+- Set due dates with Today and Tomorrow shortcuts or a calendar
+- Prevent selection of past due dates
+- Persist tasks, status, order, priority, and due dates locally
+- Preserve sidebar preferences between sessions
+
+## Technology
+
+- **Desktop:** Tauri 2 and Rust
+- **Frontend:** React 19 and Vite
+- **State management:** Zustand
+- **Database:** SQLite with Rusqlite
+- **Drag and drop:** dnd-kit
+- **Styling:** Tailwind CSS, Radix UI, and shadcn-style components
+- **Package manager:** Bun
 
 ## Download
 
-Windows installers are available from the GitHub Releases page.
+Desktop packages are published through
+[GitHub Releases](https://github.com/HexCore99/CliTo/releases).
 
-For most users, download one of these files from the latest release:
-
-- `*.exe` - standard Windows installer
-- `*.msi` - Windows MSI installer
+For Windows, download the latest `.exe` or `.msi` installer. Linux packages are
+also produced by the release workflow when available.
 
 ## Development
 
-### Requirements
+### Prerequisites
 
 - [Bun](https://bun.sh/)
 - [Rust](https://www.rust-lang.org/tools/install)
-- Tauri system dependencies for your platform
+- Platform dependencies required by Tauri
 
-### Install Dependencies
+### Install dependencies
 
 ```bash
 bun install
 ```
 
-### Run In Development
+### Run the desktop application
 
 ```bash
 bun run tauri dev
 ```
 
-The frontend dev server runs through Vite, and Tauri opens the desktop app window.
+CliTo uses Tauri commands for database access, so it should be run through the
+Tauri development command rather than as a standalone browser application.
 
-## Build
+### Build the frontend
 
-Create a production desktop build:
+```bash
+bun run build
+```
+
+### Build desktop packages
 
 ```bash
 bun run tauri build
 ```
 
-Windows installer outputs are generated under:
+Generated desktop packages are written under:
 
 ```text
 src-tauri/target/release/bundle/
 ```
 
-Common Windows outputs include:
+## Architecture
 
 ```text
-src-tauri/target/release/bundle/msi/
-src-tauri/target/release/bundle/nsis/
+React components
+    |
+    v
+Zustand task store
+    |
+    v
+Tauri commands
+    |
+    v
+Rust backend
+    |
+    v
+SQLite database
 ```
 
-## Tech Stack
-
-- Tauri 2
-- React 19
-- Vite
-- Rust
-- SQLite
-- Tailwind CSS
-- shadcn-style UI components
+The React interface manages presentation and interaction state. Zustand keeps
+the task list synchronized across components, while Rust commands handle
+database reads and writes.
 
 ## Project Structure
 
 ```text
-src/                  React frontend
-src/components/       UI and todo components
-src-tauri/            Tauri and Rust backend
-src-tauri/src/db.rs   SQLite database setup
-src-tauri/src/tasks.rs
-                      Todo CRUD commands
+src/
+  components/             Task board and reusable UI components
+  stores/useTaskStore.js  Shared task state and backend actions
+
+src-tauri/
+  src/db.rs               SQLite connection and schema setup
+  src/tasks.rs            Task commands and persistence logic
+  src/ui_config.rs        Persistent interface preferences
+  tauri.conf.json         Desktop application configuration
+
+.github/workflows/
+  release.yaml            Windows and Linux release builds
+  rust.yml                Rust checks and tests
 ```
 
-## Data Storage
+## Local Data
 
-CliTo stores tasks locally in a SQLite database named `todo.db` inside the app data directory managed by Tauri.
+CliTo stores task data in `todo.db` inside the operating system's application
+data directory. On Windows, the default location is:
 
-## Release
-
-1. Build the app:
-
-```bash
-bun run tauri build
+```text
+%APPDATA%\com.hexcr.clito\todo.db
 ```
+
+Interface preferences are stored separately in `ui_config.yaml` in the same
+application data directory.

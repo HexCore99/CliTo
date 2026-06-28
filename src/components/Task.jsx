@@ -1,7 +1,10 @@
 import React from "react";
-import { SquarePen, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { useTaskStore } from "@/stores/useTaskStore";
+import DatePicker from "./DatePicker";
+import Flag from "./Flag";
+
 const taskColor = {
   todo: "bg-orange-100 border-orange-300",
   "in-progress": "bg-blue-100 border-blue-300",
@@ -51,6 +54,10 @@ export default function Task({ task, onDelete }) {
         >
           <Trash2 size={20} strokeWidth={1.25} />
         </button>
+      </div>
+      <div className="mt-2 flex items-center gap-1">
+        <DatePicker taskId={task.id} />
+        <Flag taskId={task.id} taskPriority={task.priority} />
       </div>
     </div>
   );
