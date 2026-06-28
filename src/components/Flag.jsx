@@ -7,6 +7,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTaskStore } from "@/stores/useTaskStore";
 
 const priorities = [
   { value: "1", label: "Priority 1", color: "#dc4c3e", filled: true },
@@ -26,11 +27,15 @@ function PriorityFlag({ priority, size = 16 }) {
   );
 }
 
-export default function Flag() {
-  const [selectedPriority, setSelectedPriority] = useState("4");
+export default function Flag({ taskId, taskPriority }) {
+  const setPriorityInStore = useTaskStore((state) => state.set_priority);
+  const selectedPriority = String(taskPriority ?? 4);
   const priority =
     priorities.find((item) => item.value === selectedPriority) ?? priorities[3];
 
+  function setPriority(p) {
+    setPriorityInStore(taskId, p);
+  }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -51,7 +56,7 @@ export default function Flag() {
       >
         <DropdownMenuRadioGroup
           value={selectedPriority}
-          onValueChange={setSelectedPriority}
+          onValueChange={setPriority}
         >
           {priorities.map((item) => (
             <DropdownMenuRadioItem

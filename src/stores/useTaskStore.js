@@ -19,7 +19,17 @@ export const useTaskStore = create((set, get) => ({
   },
 
   createTask: async (task) => {
-    await invoke("create_task", { name: task.name });
+    const name = task.name;
+    const priority = task.priority ?? 4;
+    const due_date = task.due_date ?? NULL;
+    const description = task.description ?? NULL;
+
+    await invoke("create_task", {
+      name: name,
+      priority: priority,
+      due_date: due_date,
+      description: description,
+    });
 
     await get().loadTasks();
   },
@@ -62,5 +72,20 @@ export const useTaskStore = create((set, get) => ({
     await invoke("update_position", { tasks: updatedTasks });
 
     await get().loadTasks();
+  },
+
+  set_priority: async (taskId, priority) => {
+    const id = Number(taskId);
+    const newPriority = Number(priority);
+
+    await invoke("set_priority", {
+      id: id,
+      priority: newPriority,
+    });
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        Number(task.id) === id ? { ...task, priority: newPriority } : task,
+      ),
+    }));
   },
 }));

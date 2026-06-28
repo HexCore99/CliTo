@@ -57,7 +57,7 @@ export default function Task({ task, onDelete }) {
       </div>
       <div className="mt-2 flex items-center gap-1">
         <DatePicker />
-        <Flag />
+        <Flag taskId={task.id} taskPriority={task.priority} />
       </div>
     </div>
   );
