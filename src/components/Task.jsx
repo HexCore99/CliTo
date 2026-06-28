@@ -2,7 +2,7 @@ import React from "react";
 import { Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { useTaskStore } from "@/stores/useTaskStore";
-import Datee from "./Datee";
+import DatePicker from "./DatePicker";
 import Flag from "./Flag";
 
 const taskColor = {
@@ -56,7 +56,7 @@ export default function Task({ task, onDelete }) {
         </button>
       </div>
       <div className="mt-2 flex items-center gap-1">
-        <Datee />
+        <DatePicker />
         <Flag />
       </div>
     </div>
