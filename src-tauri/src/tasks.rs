@@ -1,6 +1,5 @@
-use rusqlite::{ ErrorCode::ParameterOutOfRange, params};
+use rusqlite::{ params};
 use serde::{Deserialize, Serialize};
-use tauri::utils::config::Position;
 
 // crate means current Rust Project/Module. crate = root
 use crate::db::get_connection;
@@ -155,7 +154,8 @@ pub fn delete_task(app: tauri::AppHandle, id: i64) -> Result<(), String> {
 pub fn set_due_date(
     app:tauri::AppHandle,
     id:i64,
-    due_date:Option<String>) -> Result<(),String>{
+    due_date:Option<String>
+) -> Result<(),String>{
         let conn = get_connection(&app)
         .map_err(|err| err.to_string())?;
 
@@ -188,7 +188,7 @@ pub fn set_description(
         let conn = get_connection(&app)
         .map_err(|err| err.to_string())?;
 
-    conn.execute("UPDATE tasks SET due_date = ? WHERE id = ?", params![description,id])
+    conn.execute("UPDATE tasks SET description = ? WHERE id = ?", params![description,id])
     .map_err(|err| err.to_string())?;
 
     Ok(())

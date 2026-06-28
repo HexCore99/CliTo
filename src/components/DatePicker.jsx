@@ -10,11 +10,20 @@ import {
 } from "lucide-react";
 import { Popover } from "radix-ui";
 import Tooltip from "./Tooltip";
+import { useTaskStore } from "@/stores/useTaskStore";
 
 const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
 
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function addDays(date, amount) {
@@ -59,11 +68,18 @@ function getDateKey(date) {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-export default function DatePicker() {
+export default function DatePicker({ taskId }) {
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
   const [open, setOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const setNewDate = useTaskStore((state) => state.set_date);
+  const dueDate = useTaskStore(
+    (state) =>
+      state.tasks.find((task) => Number(task.id) === Number(taskId))
+        ?.due_date ?? null,
+  );
+  const selectedDate = dueDate ? new Date(`${dueDate}T00:00:00`) : null;
+
   const [pastDateTooltip, setPastDateTooltip] = useState({
     dateKey: null,
     id: 0,
@@ -77,6 +93,15 @@ export default function DatePicker() {
     [visibleMonth],
   );
   const label = getDateLabel(selectedDate, today, tomorrow);
+  const isTodaySelected = isSameDay(selectedDate, today);
+  const isTomorrowSelected = isSameDay(selectedDate, tomorrow);
+  const selectedLabelColor = isTodaySelected
+    ? "text-green-600"
+    : isTomorrowSelected
+      ? "text-yellow-600"
+      : "text-slate-600";
+  const selectedIconColor =
+    isTodaySelected || isTomorrowSelected ? selectedLabelColor : "text-red-500";
 
   const closePastDateTooltip = useCallback(() => {
     setPastDateTooltip((currentTooltip) => ({
@@ -85,7 +110,7 @@ export default function DatePicker() {
     }));
   }, []);
 
-  function selectDate(date) {
+  async function selectDate(date) {
     const clickedDate = startOfDay(date);
 
     if (clickedDate < today) {
@@ -96,16 +121,16 @@ export default function DatePicker() {
       return;
     }
 
+    await setNewDate(taskId, formatDate(clickedDate));
     closePastDateTooltip();
-    setSelectedDate(clickedDate);
     setVisibleMonth(
       new Date(clickedDate.getFullYear(), clickedDate.getMonth(), 1),
     );
     setOpen(false);
   }
 
-  function clearDate() {
-    setSelectedDate(null);
+  async function clearDate() {
+    await setNewDate(taskId, null);
     setOpen(false);
   }
 
@@ -133,10 +158,14 @@ export default function DatePicker() {
             title="Set due date"
             aria-label={`Set due date. Current: ${label}`}
             onPointerDown={(event) => event.stopPropagation()}
-            className="inline-flex h-7 items-center gap-1.5 rounded px-1.5 text-xs text-slate-600 transition-colors hover:bg-black/5 hover:text-slate-900"
+            className="inline-flex h-7 items-center gap-1.5 rounded px-1.5 text-xs transition-colors hover:bg-black/5"
           >
-            <CalendarFold size={15} strokeWidth={1.75} color="#ff0000" />
-            <span>{label}</span>
+            <CalendarFold
+              size={15}
+              strokeWidth={1.75}
+              className={selectedIconColor}
+            />
+            <span className={selectedLabelColor}>{label}</span>
           </button>
         </Popover.Trigger>
 
@@ -151,13 +180,14 @@ export default function DatePicker() {
               <button
                 type="button"
                 onClick={() => selectDate(today)}
-                className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-slate-100"
+                className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-slate-100 ${
+                  isTodaySelected ? "bg-green-50 text-green-700" : ""
+                }`}
               >
                 <CalendarFold
                   size={18}
                   strokeWidth={1.75}
                   className="text-green-600"
-                  color="#ff0000"
                 />
                 <span>Today</span>
                 <span className="ml-auto text-xs text-slate-500">
@@ -168,9 +198,11 @@ export default function DatePicker() {
               <button
                 type="button"
                 onClick={() => selectDate(tomorrow)}
-                className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-slate-100"
+                className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-slate-100 ${
+                  isTomorrowSelected ? "bg-yellow-50 text-yellow-700" : ""
+                }`}
               >
-                <Sun size={18} strokeWidth={1.75} className="text-orange-500" />
+                <Sun size={18} strokeWidth={1.75} className="text-yellow-500" />
                 <span>Tomorrow</span>
                 <span className="ml-auto text-xs text-slate-500">
                   {tomorrow.toLocaleDateString("en-US", { weekday: "short" })}
@@ -251,7 +283,13 @@ export default function DatePicker() {
                     date.getMonth() === visibleMonth.getMonth();
                   const isSelected = isSameDay(date, selectedDate);
                   const isToday = isSameDay(date, today);
+                  const isTomorrow = isSameDay(date, tomorrow);
                   const isPast = startOfDay(date) < today;
+                  const selectedDateColor = isToday
+                    ? "bg-green-500 font-semibold text-white hover:bg-green-600"
+                    : isTomorrow
+                      ? "bg-yellow-400 font-semibold text-slate-900 hover:bg-yellow-500"
+                      : "bg-red-500 font-semibold text-white hover:bg-red-600";
 
                   const dateButton = (
                     <button
@@ -272,7 +310,7 @@ export default function DatePicker() {
                         isPast
                           ? "cursor-not-allowed text-slate-300 hover:bg-red-50"
                           : isSelected
-                            ? "bg-red-500 font-semibold text-white hover:bg-red-600"
+                            ? selectedDateColor
                             : isCurrentMonth
                               ? "text-slate-700 hover:bg-slate-100"
                               : "text-slate-300 hover:bg-slate-100"
