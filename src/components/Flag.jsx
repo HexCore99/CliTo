@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Flag as FlagIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,7 +27,7 @@ function PriorityFlag({ priority, size = 16 }) {
   );
 }
 
-export default function Flag({ taskId, taskPriority }) {
+const Flag = memo(function Flag({ taskId, taskPriority }) {
   const setPriorityInStore = useTaskStore((state) => state.set_priority);
   const selectedPriority = String(taskPriority ?? 4);
   const priority =
@@ -72,4 +72,5 @@ export default function Flag({ taskId, taskPriority }) {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});
+export default Flag;
