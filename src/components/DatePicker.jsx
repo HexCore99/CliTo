@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   CalendarDays,
   CalendarFold,
@@ -68,7 +68,7 @@ function getDateKey(date) {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-export default function DatePicker({ taskId }) {
+const DatePicker = memo(function DatePicker({ taskId }) {
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
   const [open, setOpen] = useState(false);
@@ -342,4 +342,6 @@ export default function DatePicker({ taskId }) {
       </Popover.Root>
     </>
   );
-}
+});
+
+export default DatePicker;
