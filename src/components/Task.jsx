@@ -24,6 +24,23 @@ export default function Task({ task, onDelete }) {
     transition,
   };
 
+  async function handleStatusChange(nextStatus) {
+    const previousStatus = task.status;
+
+    await changeTaskStatus(task.id, nextStatus);
+
+    const { sortOptions, sortColumn } = useSortingStore.getState();
+    const columnsToReSort = new Set([previousStatus, nextStatus]);
+
+    for (const columnStatus of columnsToReSort) {
+      const sortOption = sortOptions[columnStatus];
+
+      if (sortOption && sortOption !== "default") {
+        await sortColumn(columnStatus, sortOption);
+      }
+    }
+  }
+
   const set_date = useCallback(
     async (taskId, newDate) => {
       await setNewDate(taskId, newDate);
@@ -52,9 +69,8 @@ export default function Task({ task, onDelete }) {
           checked={task.status === "completed"}
           onPointerDown={(event) => event.stopPropagation()}
           onChange={(event) => {
-            event.target.checked
-              ? changeTaskStatus(task.id, "completed")
-              : changeTaskStatus(task.id, "todo");
+            const nextStatus = event.target.checked ? "completed" : "todo";
+            handleStatusChange(nextStatus);
           }}
         />
         <p className="min-w-0 flex-1 break-words ">{task.name}</p>

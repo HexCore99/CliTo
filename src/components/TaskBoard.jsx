@@ -14,6 +14,7 @@ import {
 import TaskColumn from "./TaskColumn";
 import Task from "./Task";
 import CreateTask from "./CreateTask";
+import { useSortingStore } from "@/stores/useSortingStore";
 
 const columns = [
   { title: "Todo", status: "todo" },
@@ -82,13 +83,18 @@ export default function TaskBoard() {
     const activeOverId = String(over.id);
     const taskList = flattenTasks(tasks);
 
+    const activeTask = taskList.find(
+      (task) => String(task.id) === activeTaskId,
+    );
+    if (!activeTask) return;
+
+    const previousStatus = activeTask.status;
+
     const nextStatus = getDropStatus(activeOverId, taskList);
     if (!nextStatus) return;
 
     const statusUpdatedTasks = taskList.map((task) =>
-      String(task.id) === activeTaskId
-        ? { ...task, status: nextStatus }
-        : task,
+      String(task.id) === activeTaskId ? { ...task, status: nextStatus } : task,
     );
     const oldIdx = statusUpdatedTasks.findIndex(
       (task) => String(task.id) === activeTaskId,
@@ -111,6 +117,18 @@ export default function TaskBoard() {
       id: Number(activeTaskId),
       status: nextStatus,
     });
+
+    const { sortOptions, sortColumn } = useSortingStore.getState();
+    const columnsToReSort = new Set([previousStatus, nextStatus]);
+
+    for (const colStat of columnsToReSort) {
+      const sortOption = sortOptions[colStat];
+      if (sortOption && sortOption !== "default") {
+        await sortColumn(colStat, sortOption);
+      }
+    }
+
+    // on changing column, i want to initiate sort for both columns. should i do it from here?
   }
 
   function getTasksForColumn(status) {
