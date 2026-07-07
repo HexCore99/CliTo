@@ -1,4 +1,5 @@
 import React from "react";
+import { useCallback } from "react";
 import { Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { useTaskStore } from "@/stores/useTaskStore";
@@ -23,16 +24,19 @@ export default function Task({ task, onDelete }) {
     transition,
   };
 
-  async function set_date(taskId, newDate) {
-    await setNewDate(taskId, newDate);
-    // call the sorting function after updating the date
-    const { sortOptions, sortColumn } = useSortingStore.getState();
-    const sortOption = sortOptions[task.status];
-    if (sortOption !== "default") {
-      await sortColumn(task.status, sortOption);
-    }
-    console.log("sortColumn called from ", task);
-  }
+  const set_date = useCallback(
+    async (taskId, newDate) => {
+      await setNewDate(taskId, newDate);
+      // call the sorting function after updating the date
+      const { sortOptions, sortColumn } = useSortingStore.getState();
+      const sortOption = sortOptions[task.status];
+      if (sortOption !== "default") {
+        await sortColumn(task.status, sortOption);
+      }
+      console.log("sortColumn called from ", task);
+    },
+    [task.status, setNewDate],
+  );
 
   return (
     <div
