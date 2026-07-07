@@ -193,3 +193,55 @@ pub fn set_description(
 
     Ok(())
 }
+
+
+#[tauri::command]
+pub fn sort_tasks(
+    app: tauri::AppHandle,
+    column_name: String,
+    sort_option: String,
+) -> Result<Vec<Task>, String> {
+
+    if !matches!(column_name.as_str(), "todo" | "in-progress" | "completed") {
+        return Err(format!("Invalid column name: {}", column_name));
+    };
+
+    let conn = get_connection(&app).map_err(|err| err.to_string())?;
+
+    let order_by_clause = match sort_option.as_str() {
+        "default" => "position ASC",
+        "date-asc" => "CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC",
+        "date-desc" => " CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date DESC",
+        "priority-high" => "priority ASC",
+        "priority-low" => "priority DESC",
+        _ => return Err(format!("Unknown sort option: {}", sort_option)),
+    };
+
+    let query = format!(
+        "SELECT id,name,status,position,priority,due_date,description
+         FROM tasks
+         WHERE status = ?
+         ORDER BY {}",
+        order_by_clause
+    );
+
+    let mut stmt = conn.prepare(&query).map_err(|err| err.to_string())?;
+
+    let tasks = stmt
+        .query_map([column_name], |row| {
+            Ok(Task {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                status: row.get(2)?,
+                position: row.get(3)?,
+                priority: row.get(4)?,
+                due_date: row.get(5)?,
+                description: row.get(6)?,
+            })
+        })
+        .map_err(|err| err.to_string())?
+        .collect::<Result<Vec<Task>, _>>()
+        .map_err(|err| err.to_string())?;
+
+    Ok(tasks)
+}

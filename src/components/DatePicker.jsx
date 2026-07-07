@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Popover } from "radix-ui";
 import Tooltip from "./Tooltip";
-import { useTaskStore } from "@/stores/useTaskStore";
+import { flattenTasks, useTaskStore } from "@/stores/useTaskStore";
 
 const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -75,7 +75,9 @@ const DatePicker = memo(function DatePicker({ taskId }) {
   const setNewDate = useTaskStore((state) => state.set_date);
   const dueDate = useTaskStore(
     (state) =>
-      state.tasks.find((task) => Number(task.id) === Number(taskId))
+      flattenTasks(state.tasks).find(
+        (task) => Number(task.id) === Number(taskId),
+      )
         ?.due_date ?? null,
   );
   const selectedDate = dueDate ? new Date(`${dueDate}T00:00:00`) : null;
