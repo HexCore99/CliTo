@@ -4,15 +4,12 @@ import { useSortable } from "@dnd-kit/sortable";
 import { useTaskStore } from "@/stores/useTaskStore";
 import DatePicker from "./DatePicker";
 import Flag from "./Flag";
-
-const taskColor = {
-  todo: "bg-orange-100 border-orange-300",
-  "in-progress": "bg-blue-100 border-blue-300",
-  completed: "bg-green-100 border-green-300",
-};
+import { useSortingStore } from "@/stores/useSortingStore";
 
 export default function Task({ task, onDelete }) {
   const changeTaskStatus = useTaskStore((state) => state.changeTaskStatus);
+
+  const setNewDate = useTaskStore((state) => state.set_date);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
@@ -25,6 +22,17 @@ export default function Task({ task, onDelete }) {
       : undefined,
     transition,
   };
+
+  async function set_date(taskId, newDate) {
+    await setNewDate(taskId, newDate);
+    // call the sorting function after updating the date
+    const { sortOptions, sortColumn } = useSortingStore.getState();
+    const sortOption = sortOptions[task.status];
+    if (sortOption !== "default") {
+      await sortColumn(task.status, sortOption);
+    }
+    console.log("sortColumn called from ", task);
+  }
 
   return (
     <div
@@ -56,9 +64,15 @@ export default function Task({ task, onDelete }) {
         </button>
       </div>
       <div className="mt-2 flex items-center gap-1">
-        <DatePicker taskId={task.id} />
+        <DatePicker taskId={task.id} onChange={set_date} />
         <Flag taskId={task.id} taskPriority={task.priority} />
       </div>
     </div>
   );
 }
+
+const taskColor = {
+  todo: "bg-orange-100 border-orange-300",
+  "in-progress": "bg-blue-100 border-blue-300",
+  completed: "bg-green-100 border-green-300",
+};

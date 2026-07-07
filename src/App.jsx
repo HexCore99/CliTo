@@ -14,7 +14,6 @@ export default function App() {
   const [uiConfig, setUiConfig] = useState(null);
 
   const loadTasks = useTaskStore((state) => state.loadTasks);
-
   async function saveUiConfig(nextConfig) {
     setUiConfig(nextConfig);
     await invoke("save_ui_config", { config: nextConfig });

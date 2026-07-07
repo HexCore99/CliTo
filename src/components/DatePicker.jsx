@@ -12,74 +12,18 @@ import { Popover } from "radix-ui";
 import Tooltip from "./Tooltip";
 import { flattenTasks, useTaskStore } from "@/stores/useTaskStore";
 
-const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
-
-function startOfDay(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function formatDate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function addDays(date, amount) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + amount);
-  return startOfDay(nextDate);
-}
-
-function isSameDay(firstDate, secondDate) {
-  return (
-    firstDate?.getFullYear() === secondDate?.getFullYear() &&
-    firstDate?.getMonth() === secondDate?.getMonth() &&
-    firstDate?.getDate() === secondDate?.getDate()
-  );
-}
-
-function getDateLabel(selectedDate, today, tomorrow) {
-  if (!selectedDate) return "No Date";
-  if (isSameDay(selectedDate, today)) return "Today";
-  if (isSameDay(selectedDate, tomorrow)) return "Tomorrow";
-
-  return selectedDate.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-  });
-}
-
-function getCalendarDays(visibleMonth) {
-  const year = visibleMonth.getFullYear();
-  const month = visibleMonth.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const mondayBasedOffset = (firstDay.getDay() + 6) % 7;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cellCount = Math.ceil((mondayBasedOffset + daysInMonth) / 7) * 7;
-
-  return Array.from({ length: cellCount }, (_, index) => {
-    return new Date(year, month, index - mondayBasedOffset + 1);
-  });
-}
-
-function getDateKey(date) {
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-}
-
-const DatePicker = memo(function DatePicker({ taskId }) {
+const DatePicker = memo(function DatePicker({ taskId, onChange }) {
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
   const [open, setOpen] = useState(false);
-  const setNewDate = useTaskStore((state) => state.set_date);
+
   const dueDate = useTaskStore(
     (state) =>
       flattenTasks(state.tasks).find(
         (task) => Number(task.id) === Number(taskId),
-      )
-        ?.due_date ?? null,
+      )?.due_date ?? null,
   );
+
   const selectedDate = dueDate ? new Date(`${dueDate}T00:00:00`) : null;
 
   const [pastDateTooltip, setPastDateTooltip] = useState({
@@ -123,7 +67,7 @@ const DatePicker = memo(function DatePicker({ taskId }) {
       return;
     }
 
-    await setNewDate(taskId, formatDate(clickedDate));
+    await onChange(taskId, formatDate(clickedDate));
     closePastDateTooltip();
     setVisibleMonth(
       new Date(clickedDate.getFullYear(), clickedDate.getMonth(), 1),
@@ -132,7 +76,7 @@ const DatePicker = memo(function DatePicker({ taskId }) {
   }
 
   async function clearDate() {
-    await setNewDate(taskId, null);
+    await onChange(taskId, null);
     setOpen(false);
   }
 
@@ -347,3 +291,60 @@ const DatePicker = memo(function DatePicker({ taskId }) {
 });
 
 export default DatePicker;
+
+// Helper functions
+const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date, amount) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + amount);
+  return startOfDay(nextDate);
+}
+
+function isSameDay(firstDate, secondDate) {
+  return (
+    firstDate?.getFullYear() === secondDate?.getFullYear() &&
+    firstDate?.getMonth() === secondDate?.getMonth() &&
+    firstDate?.getDate() === secondDate?.getDate()
+  );
+}
+
+function getDateLabel(selectedDate, today, tomorrow) {
+  if (!selectedDate) return "No Date";
+  if (isSameDay(selectedDate, today)) return "Today";
+  if (isSameDay(selectedDate, tomorrow)) return "Tomorrow";
+
+  return selectedDate.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+  });
+}
+
+function getCalendarDays(visibleMonth) {
+  const year = visibleMonth.getFullYear();
+  const month = visibleMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const mondayBasedOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cellCount = Math.ceil((mondayBasedOffset + daysInMonth) / 7) * 7;
+
+  return Array.from({ length: cellCount }, (_, index) => {
+    return new Date(year, month, index - mondayBasedOffset + 1);
+  });
+}
+
+function getDateKey(date) {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
