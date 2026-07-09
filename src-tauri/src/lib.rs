@@ -25,6 +25,7 @@ pub fn run() {
             tasks::set_due_date,
             tasks::set_priority,
             tasks::set_description,
+            tasks::sort_tasks,
             ui_config::get_ui_config,
             ui_config::save_ui_config
         ])

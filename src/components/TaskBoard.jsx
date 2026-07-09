@@ -6,10 +6,15 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import { useTaskStore } from "@/stores/useTaskStore";
+import {
+  flattenTasks,
+  groupTasksByStatus,
+  useTaskStore,
+} from "@/stores/useTaskStore";
 import TaskColumn from "./TaskColumn";
 import Task from "./Task";
 import CreateTask from "./CreateTask";
+import { useSortingStore } from "@/stores/useSortingStore";
 
 const columns = [
   { title: "Todo", status: "todo" },
@@ -47,14 +52,25 @@ export default function TaskBoard() {
     const overId = String(over.id);
 
     setTasks((currentTasks) => {
-      const nextStatus = getDropStatus(overId, currentTasks);
+      const currentTaskList = flattenTasks(currentTasks);
+      const nextStatus = getDropStatus(overId, currentTaskList);
       if (!nextStatus) return currentTasks;
 
-      return currentTasks.map((task) => {
+      const activeTask = currentTaskList.find(
+        (task) => String(task.id) === activeTaskId,
+      );
+
+      if (!activeTask || activeTask.status === nextStatus) {
+        return currentTasks;
+      }
+
+      const updatedTasks = currentTaskList.map((task) => {
         return String(task.id) === activeTaskId
           ? { ...task, status: nextStatus }
           : task;
       });
+
+      return groupTasksByStatus(updatedTasks);
     });
   }
 
@@ -65,27 +81,58 @@ export default function TaskBoard() {
 
     const activeTaskId = String(active.id);
     const activeOverId = String(over.id);
+    const taskList = flattenTasks(tasks);
 
-    const nextStatus = getDropStatus(activeOverId, tasks);
+    const activeTask = taskList.find(
+      (task) => String(task.id) === activeTaskId,
+    );
+    if (!activeTask) return;
+
+    const previousStatus = activeTask.status;
+
+    const nextStatus = getDropStatus(activeOverId, taskList);
     if (!nextStatus) return;
 
-    const oldIdx = tasks.findIndex((task) => String(task.id) === activeTaskId);
-    const newIdx = tasks.findIndex((task) => String(task.id) === activeOverId);
-    let reorderedTasks = tasks;
-    if (newIdx !== -1) reorderedTasks = arrayMove(tasks, oldIdx, newIdx);
+    const statusUpdatedTasks = taskList.map((task) =>
+      String(task.id) === activeTaskId ? { ...task, status: nextStatus } : task,
+    );
+    const oldIdx = statusUpdatedTasks.findIndex(
+      (task) => String(task.id) === activeTaskId,
+    );
+    const newIdx = statusUpdatedTasks.findIndex(
+      (task) => String(task.id) === activeOverId,
+    );
+    let reorderedTasks = statusUpdatedTasks;
 
-    setTasks(reorderedTasks);
-    await invoke("update_position", { tasks: reorderedTasks });
+    if (oldIdx !== -1 && newIdx !== -1) {
+      reorderedTasks = arrayMove(statusUpdatedTasks, oldIdx, newIdx);
+    }
+
+    const tasksByStatus = groupTasksByStatus(reorderedTasks);
+    const tasksToPersist = flattenTasks(tasksByStatus);
+
+    setTasks(tasksByStatus);
+    await invoke("update_position", { tasks: tasksToPersist });
     await invoke("update_task_status", {
       id: Number(activeTaskId),
       status: nextStatus,
     });
+
+    const { sortOptions, sortColumn } = useSortingStore.getState();
+    const columnsToReSort = new Set([previousStatus, nextStatus]);
+
+    for (const colStat of columnsToReSort) {
+      const sortOption = sortOptions[colStat];
+      if (sortOption && sortOption !== "default") {
+        await sortColumn(colStat, sortOption);
+      }
+    }
+
+    // on changing column, i want to initiate sort for both columns. should i do it from here?
   }
 
   function getTasksForColumn(status) {
-    return tasks.filter((task) => {
-      return (task.status ?? "todo") === status;
-    });
+    return tasks[status] ?? [];
   }
 
   return (

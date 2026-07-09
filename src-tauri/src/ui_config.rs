@@ -5,6 +5,7 @@ use tauri::Manager;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UiConfig {
     pub sidebar: SidebarConfig,
+    pub sort_config: Vec<SortConfig>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -15,8 +16,14 @@ pub struct SidebarConfig {
     pub nav_open_items: HashMap<String, bool>,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct SortConfig{
+    pub sort_by: String,
+    pub column_name: String,
+}
+
 fn default_ui_config() -> UiConfig {
-    let mut nav_open_items = HashMap::new();
+    let mut nav_open_items: HashMap<String, bool> = HashMap::new();
 
     nav_open_items.insert("Tasks".to_string(), true);
     nav_open_items.insert("Settings".to_string(), true);
@@ -27,8 +34,23 @@ fn default_ui_config() -> UiConfig {
             open_and_float: false,
             nav_open_items,
         },
+        sort_config: vec![
+            SortConfig {
+            sort_by: "default".to_string(),
+            column_name: "todo".to_string(),
+        },
+            SortConfig {
+            sort_by: "default".to_string(),
+            column_name: "in-progress".to_string(),
+        },
+            SortConfig {
+            sort_by: "default".to_string(),
+            column_name: "completed".to_string(),
+        },
+        ],
     }
 }
+
 
 fn config_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let app_data_dir = app.path().app_data_dir().map_err(|err| err.to_string())?;

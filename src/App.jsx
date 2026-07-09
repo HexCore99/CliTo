@@ -9,11 +9,15 @@ import TaskBoard from "./components/TaskBoard";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTaskStore } from "./stores/useTaskStore";
+import { useSortingStore } from "./stores/useSortingStore";
 
 export default function App() {
   const [uiConfig, setUiConfig] = useState(null);
 
   const loadTasks = useTaskStore((state) => state.loadTasks);
+  const loadInitialSorting = useSortingStore(
+    (state) => state.loadInitialSorting,
+  );
 
   async function saveUiConfig(nextConfig) {
     setUiConfig(nextConfig);
@@ -25,10 +29,11 @@ export default function App() {
       const savedUiConfig = await invoke("get_ui_config");
       setUiConfig(savedUiConfig);
     }
-
     loadTasks();
+    
     loadInitialConfig();
-  }, [loadTasks]);
+    loadInitialSorting();
+  }, [loadTasks, loadInitialSorting]);
 
   function setSidebarOpen(open) {
     saveUiConfig({
@@ -69,15 +74,9 @@ export default function App() {
         <SidebarInset>
           <header className="flex h-14 items-center gap-3 border-b px-4">
             <SidebarTrigger />
-            <h1 className="text-sm font-medium">Todo</h1>
           </header>
 
-          <main className="p-6">
-            <h2 className="text-2xl font-bold tracking-tight">Todo App</h2>
-            <p className="text-muted-foreground">
-              Your task manager content will go here.
-            </p>
-          </main>
+          <main className="p-6"></main>
           <TaskBoard />
         </SidebarInset>
       </SidebarProvider>

@@ -1,18 +1,16 @@
 import React from "react";
+import { useCallback } from "react";
 import { Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { useTaskStore } from "@/stores/useTaskStore";
 import DatePicker from "./DatePicker";
 import Flag from "./Flag";
-
-const taskColor = {
-  todo: "bg-orange-100 border-orange-300",
-  "in-progress": "bg-blue-100 border-blue-300",
-  completed: "bg-green-100 border-green-300",
-};
+import { useSortingStore } from "@/stores/useSortingStore";
 
 export default function Task({ task, onDelete }) {
   const changeTaskStatus = useTaskStore((state) => state.changeTaskStatus);
+
+  const setNewDate = useTaskStore((state) => state.set_date);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
@@ -25,6 +23,37 @@ export default function Task({ task, onDelete }) {
       : undefined,
     transition,
   };
+
+  async function handleStatusChange(nextStatus) {
+    const previousStatus = task.status;
+
+    await changeTaskStatus(task.id, nextStatus);
+
+    const { sortOptions, sortColumn } = useSortingStore.getState();
+    const columnsToReSort = new Set([previousStatus, nextStatus]);
+
+    for (const columnStatus of columnsToReSort) {
+      const sortOption = sortOptions[columnStatus];
+
+      if (sortOption && sortOption !== "default") {
+        await sortColumn(columnStatus, sortOption);
+      }
+    }
+  }
+
+  const set_date = useCallback(
+    async (taskId, newDate) => {
+      await setNewDate(taskId, newDate);
+      // call the sorting function after updating the date
+      const { sortOptions, sortColumn } = useSortingStore.getState();
+      const sortOption = sortOptions[task.status];
+      if (sortOption !== "default") {
+        await sortColumn(task.status, sortOption);
+      }
+      console.log("sortColumn called from ", task);
+    },
+    [task.status, setNewDate],
+  );
 
   return (
     <div
@@ -40,9 +69,8 @@ export default function Task({ task, onDelete }) {
           checked={task.status === "completed"}
           onPointerDown={(event) => event.stopPropagation()}
           onChange={(event) => {
-            event.target.checked
-              ? changeTaskStatus(task.id, "completed")
-              : changeTaskStatus(task.id, "todo");
+            const nextStatus = event.target.checked ? "completed" : "todo";
+            handleStatusChange(nextStatus);
           }}
         />
         <p className="min-w-0 flex-1 break-words ">{task.name}</p>
@@ -56,9 +84,15 @@ export default function Task({ task, onDelete }) {
         </button>
       </div>
       <div className="mt-2 flex items-center gap-1">
-        <DatePicker taskId={task.id} />
+        <DatePicker taskId={task.id} onChange={set_date} />
         <Flag taskId={task.id} taskPriority={task.priority} />
       </div>
     </div>
   );
 }
+
+const taskColor = {
+  todo: "bg-orange-100 border-orange-300",
+  "in-progress": "bg-blue-100 border-blue-300",
+  completed: "bg-green-100 border-green-300",
+};

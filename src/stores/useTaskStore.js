@@ -2,8 +2,59 @@ import { invoke } from "@tauri-apps/api/core";
 import { newMenu } from "@tauri-apps/api/menu/base";
 import { create } from "zustand";
 
+export const TASK_STATUSES = ["todo", "in-progress", "completed"];
+
+export function createTaskColumns() {
+  return {
+    todo: [],
+    "in-progress": [],
+    completed: [],
+  };
+}
+
+export function flattenTasks(tasksByStatus) {
+  return TASK_STATUSES.flatMap((status) => tasksByStatus[status] ?? []);
+}
+
+export function groupTasksByStatus(taskList) {
+  return taskList.reduce((tasksByStatus, task) => {
+    const status = TASK_STATUSES.includes(task.status) ? task.status : "todo";
+    tasksByStatus[status].push(
+      status === task.status ? task : { ...task, status },
+    );
+    return tasksByStatus;
+  }, createTaskColumns());
+}
+
+function moveTaskToColumn(tasksByStatus, taskId, newStatus) {
+  if (!TASK_STATUSES.includes(newStatus)) {
+    return tasksByStatus;
+  }
+
+  const id = Number(taskId);
+  const taskList = flattenTasks(tasksByStatus);
+  const selectedTask = taskList.find((task) => Number(task.id) === id);
+
+  if (!selectedTask) {
+    return tasksByStatus;
+  }
+
+  const remainingTasks = groupTasksByStatus(
+    taskList.filter((task) => Number(task.id) !== id),
+  );
+
+  return {
+    ...remainingTasks,
+    [newStatus]: [
+      { ...selectedTask, status: newStatus },
+      ...remainingTasks[newStatus],
+    ],
+  };
+}
+
 export const useTaskStore = create((set, get) => ({
-  tasks: [],
+  tasks: createTaskColumns(),
+
   setTasks: (newTasks) => {
     //newTasks can be task array or function
 
@@ -16,16 +67,24 @@ export const useTaskStore = create((set, get) => ({
     const id = Number(taskId);
 
     set((state) => ({
-      tasks: state.tasks.map((task) =>
-        Number(task.id) === id ? { ...task, [fieldName]: newValue } : task,
+      tasks: Object.fromEntries(
+        TASK_STATUSES.map((status) => [
+          status,
+          state.tasks[status].map((task) =>
+            Number(task.id) === id
+              ? { ...task, [fieldName]: newValue }
+              : task,
+          ),
+        ]),
       ),
     }));
   },
 
   loadTasks: async () => {
-    const savedTasks = await invoke("get_tasks");
+    const tasksFromDB = await invoke("get_tasks");
+
     set({
-      tasks: savedTasks,
+      tasks: groupTasksByStatus(tasksFromDB),
     });
   },
 
@@ -49,7 +108,14 @@ export const useTaskStore = create((set, get) => ({
     await invoke("delete_task", { id: taskId });
 
     set((state) => ({
-      tasks: state.tasks.filter((task) => task.id !== taskId),
+      tasks: Object.fromEntries(
+        TASK_STATUSES.map((status) => [
+          status,
+          state.tasks[status].filter(
+            (task) => Number(task.id) !== Number(taskId),
+          ),
+        ]),
+      ),
     }));
   },
   updateTaskStatus: async (taskId, newStatus) => {
@@ -60,7 +126,9 @@ export const useTaskStore = create((set, get) => ({
       status: newStatus,
     });
 
-    get().updateTaskField(taskId, "status", newStatus);
+    set((state) => ({
+      tasks: moveTaskToColumn(state.tasks, id, newStatus),
+    }));
 
     // set((state) => ({
     //   tasks: state.tasks.map((task) =>
@@ -72,17 +140,14 @@ export const useTaskStore = create((set, get) => ({
   changeTaskStatus: async (taskId, status) => {
     const id = Number(taskId);
     const currentTasks = get().tasks;
+    const updatedTasks = moveTaskToColumn(currentTasks, id, status);
 
-    const selectedTask = currentTasks.find((task) => task.id === id);
-    if (!selectedTask) return;
-
-    const updatedTasks = [
-      { ...selectedTask, status },
-      ...currentTasks.filter((tsk) => tsk.id !== id),
-    ];
+    if (updatedTasks === currentTasks) return;
 
     await invoke("update_task_status", { id, status });
-    await invoke("update_position", { tasks: updatedTasks });
+    await invoke("update_position", {
+      tasks: flattenTasks(updatedTasks),
+    });
 
     await get().loadTasks();
   },
