@@ -23,6 +23,10 @@ export default function Sorting({ columnName }) {
     (state) => state.sortOptions[columnName],
   );
 
+  const seletedLabel = SORT_OPTIONS.find(
+    (option) => option.value === selectedValue,
+  )?.label;
+
   const sortColumn = useSortingStore((state) => state.sortColumn);
 
   async function handleValueChange(nextValue) {
@@ -36,9 +40,10 @@ export default function Sorting({ columnName }) {
           type="button"
           title="Sort tasks"
           aria-label="Sort tasks"
-          className="inline-flex size-8 items-center justify-center rounded-lg transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 text-xs transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
-          <ArrowUpDown className="size-4" />
+          <span>{seletedLabel}</span>
+          <ArrowUpDown className="size-3.5 shrink-0" />
         </button>
       </DropdownMenuTrigger>
 
