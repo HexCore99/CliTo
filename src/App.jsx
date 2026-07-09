@@ -9,11 +9,16 @@ import TaskBoard from "./components/TaskBoard";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTaskStore } from "./stores/useTaskStore";
+import { useSortingStore } from "./stores/useSortingStore";
 
 export default function App() {
   const [uiConfig, setUiConfig] = useState(null);
 
   const loadTasks = useTaskStore((state) => state.loadTasks);
+  const loadInitialSorting = useSortingStore(
+    (state) => state.loadInitialSorting,
+  );
+
   async function saveUiConfig(nextConfig) {
     setUiConfig(nextConfig);
     await invoke("save_ui_config", { config: nextConfig });
@@ -24,10 +29,11 @@ export default function App() {
       const savedUiConfig = await invoke("get_ui_config");
       setUiConfig(savedUiConfig);
     }
-
     loadTasks();
+    
     loadInitialConfig();
-  }, [loadTasks]);
+    loadInitialSorting();
+  }, [loadTasks, loadInitialSorting]);
 
   function setSidebarOpen(open) {
     saveUiConfig({

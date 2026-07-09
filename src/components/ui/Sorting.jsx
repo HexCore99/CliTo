@@ -19,11 +19,13 @@ export const SORT_OPTIONS = [
 ];
 
 export default function Sorting({ columnName }) {
-  const [internalValue, setInternalValue] = useState("default");
+  const selectedValue = useSortingStore(
+    (state) => state.sortOptions[columnName],
+  );
+
   const sortColumn = useSortingStore((state) => state.sortColumn);
 
   async function handleValueChange(nextValue) {
-    setInternalValue(nextValue);
     await sortColumn(columnName, nextValue);
   }
 
@@ -43,7 +45,7 @@ export default function Sorting({ columnName }) {
       <DropdownMenuContent align="end" className="w-48 bg-white">
         <DropdownMenuLabel>Sort tasks</DropdownMenuLabel>
         <DropdownMenuRadioGroup
-          value={internalValue}
+          value={selectedValue}
           onValueChange={handleValueChange}
         >
           {SORT_OPTIONS.map((option) => (
