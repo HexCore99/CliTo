@@ -18,9 +18,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             tasks::get_tasks,
+            tasks::get_trash_tasks,
             tasks::create_task,
             tasks::move_to_trash,
+            tasks::restore_from_trash,
             tasks::delete_from_trash,
+            tasks::empty_trash,
             tasks::update_position,
             tasks::update_task_status,
             tasks::set_due_date,

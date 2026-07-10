@@ -30,7 +30,6 @@ export const useSortingStore = create((set, get) => ({
 
   updateUiConfig: async (columnName, sortOption) => {
     const currConfig = await invoke("get_ui_config");
-    console.log(currConfig.sort_config);
 
     const nextConfig = currConfig.sort_config.map((item) =>
       item.column_name === columnName ? { ...item, sort_by: sortOption } : item,
@@ -57,15 +56,11 @@ export const useSortingStore = create((set, get) => ({
       sortOption,
     });
 
-    // console.log("current tasks before sorting:", useTaskStore.getState().tasks);
-    // console.log("sorted tasks:", sortedTasks);
 
     useTaskStore.getState().setTasks((currentTasks) => ({
       ...currentTasks,
       [columnName]: sortedTasks,
     }));
-    // console.log("current tasks after sorting:", useTaskStore.getState().tasks);
-    // console.log("\n\n\n");
 
     get().updateUiConfig(columnName, sortOption);
 

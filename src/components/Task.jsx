@@ -74,7 +74,6 @@ export default function Task({ task, onDelete }) {
       if (sortOption !== "default") {
         await sortColumn(task.status, sortOption);
       }
-      console.log("sortColumn called from ", task);
     },
     [task.status, setNewDate],
   );

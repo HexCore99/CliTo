@@ -16,7 +16,6 @@ export function NavGeneral({ items }) {
     const newStates = {
       active: item.title,
     };
-    console.log(newStates);
     setBoardState(newStates);
   }
   return (

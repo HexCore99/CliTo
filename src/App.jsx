@@ -11,6 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTaskStore } from "./stores/useTaskStore";
 import { useSortingStore } from "./stores/useSortingStore";
 import { useBoardStore } from "./stores/useBoardStore";
+import {useTrashStore} from "./stores/useTrashStore"
 import TrashBoard from "./components/TrashBoard";
 
 export default function App() {
