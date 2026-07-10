@@ -1,6 +1,7 @@
 import React from "react";
 import { useCallback } from "react";
-import { Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Check, Trash2, SquarePen, X } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { useTaskStore } from "@/stores/useTaskStore";
 import DatePicker from "./DatePicker";
@@ -11,6 +12,9 @@ export default function Task({ task, onDelete }) {
   const changeTaskStatus = useTaskStore((state) => state.changeTaskStatus);
 
   const setNewDate = useTaskStore((state) => state.set_date);
+  const updateTaskName = useTaskStore((state) => state.updateTaskName);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftName, setDraftName] = useState(task.name);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
@@ -39,6 +43,26 @@ export default function Task({ task, onDelete }) {
         await sortColumn(columnStatus, sortOption);
       }
     }
+  }
+
+  function startEditing() {
+    setDraftName(task.name);
+    setIsEditing(true);
+  }
+
+  function cancelEditing() {
+    setDraftName(task.name);
+    setIsEditing(false);
+  }
+
+  async function saveEditing() {
+    const nextName = draftName.trim();
+
+    if (nextName) {
+      await updateTaskName(task.id, nextName);
+    }
+
+    setIsEditing(false);
   }
 
   const set_date = useCallback(
@@ -73,8 +97,58 @@ export default function Task({ task, onDelete }) {
             handleStatusChange(nextStatus);
           }}
         />
-        <p className="min-w-0 flex-1 break-words ">{task.name}</p>
-        {/* <SquarePen className="cursor-pointer hover:text-blue-500" size={20} />*/}
+        {isEditing ? (
+          <input
+            className="min-w-0 flex-1 rounded border border-orange-300 bg-white px-2 py-1 text-sm outline-none"
+            value={draftName}
+            autoFocus
+            onPointerDown={(event) => event.stopPropagation()}
+            onChange={(event) => setDraftName(event.target.value)}
+            onKeyDown={(event) => {
+              event.stopPropagation();
+
+              if (event.key === "Enter") {
+                saveEditing();
+              }
+
+              if (event.key === "Escape") {
+                cancelEditing();
+              }
+            }}
+          />
+        ) : (
+          <p className="min-w-0 flex-1 break-words ">{task.name}</p>
+        )}
+
+        {isEditing ? (
+          <>
+            <button
+              className="shrink-0 p-2 hover:text-green-600"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={saveEditing}
+            >
+              <Check size={20} />
+            </button>
+            <button
+              className="shrink-0 p-2 hover:text-red-500"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={cancelEditing}
+            >
+              <X size={20} />
+            </button>
+          </>
+        ) : (
+          <button
+            className="shrink-0 p-2  hover:text-blue-500"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={startEditing}
+          >
+            <SquarePen
+              className="cursor-pointer hover:text-blue-500"
+              size={20}
+            />
+          </button>
+        )}
         <button
           className="shrink-0 p-2  hover:text-blue-500"
           onPointerDown={(e) => e.stopPropagation()}
