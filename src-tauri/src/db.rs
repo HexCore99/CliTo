@@ -24,7 +24,8 @@ pub fn get_connection(app: &tauri::AppHandle) -> Result<Connection, String> {
         position INTEGER NOT NULL DEFAULT 0,
         due_date DATE,
         priority INTEGER NOT NULL DEFAULT 4,
-        description TEXT
+        description TEXT,
+        in_trash INTEGER NOT NULL DEFAULT 0
         )",
         [],
     )
