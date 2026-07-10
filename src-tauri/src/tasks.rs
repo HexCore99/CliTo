@@ -135,6 +135,25 @@ pub fn update_task_status(app: tauri::AppHandle,id:i64,status: String) -> Result
 
 }
 
+
+#[tauri::command]
+pub fn update_task_desc(
+    app: tauri::AppHandle,
+    id:i64,
+    updated_task:String
+)->Result<(),String>{
+let conn = get_connection(&app)
+.map_err(|err| err.to_string())?;
+
+conn.execute("UPDATE tasks
+             SET name = ?
+             WHERE id =?",
+             params![updated_task,id])
+              .map_err(|err| err.to_string())?;
+
+    Ok(())
+}
+
 #[tauri::command]
 pub fn delete_task(app: tauri::AppHandle, id: i64) -> Result<(), String> {
     let conn = get_connection(&app)?;

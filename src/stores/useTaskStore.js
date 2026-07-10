@@ -180,4 +180,15 @@ export const useTaskStore = create((set, get) => ({
 
     get().updateTaskField(id, "due_date", dueDate);
   },
+
+  updateTaskName: async (taskId, name) => {
+    const id = Number(taskId);
+
+    await invoke("update_task_desc", {
+      id,
+      updatedTask: name,
+    });
+
+    get().updateTaskField(id, "name", name);
+  },
 }));
