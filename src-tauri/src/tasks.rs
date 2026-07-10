@@ -17,11 +17,16 @@ pub struct Task {
 }
 
 #[tauri::command] // allow this function to be called from the frontend
-pub fn get_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
+pub fn get_tasks(
+    app: tauri::AppHandle
+) -> Result<Vec<Task>, String> {
     let conn = get_connection(&app)?; // why not map_err here?
 
     let mut stmt = conn
-        .prepare("SELECT id,name,status,position,priority,due_date,description FROM tasks ORDER BY position ASC")
+        .prepare("SELECT id,name,status,position,priority,due_date,description
+         FROM tasks
+         WHERE in_trash = 0
+         ORDER BY position ASC")
         .map_err(|e| e.to_string())?;
 
     let tasks = stmt
@@ -76,7 +81,10 @@ pub fn create_task(
 
 
 #[tauri::command]
-pub fn update_position(app:tauri::AppHandle,tasks: Vec<Task>)-> Result<(),String>{
+pub fn update_position(
+    app:tauri::AppHandle,
+    tasks: Vec<Task>
+)-> Result<(),String>{
     let mut  conn = get_connection(&app)?;
     let tx = conn.transaction()
     .map_err(|err| err.to_string())?;
@@ -122,7 +130,11 @@ pub fn update_position(app:tauri::AppHandle,tasks: Vec<Task>)-> Result<(),String
 
 
 #[tauri::command]
-pub fn update_task_status(app: tauri::AppHandle,id:i64,status: String) -> Result<(), String> {
+pub fn update_task_status(
+    app: tauri::AppHandle,
+    id:i64,
+    status: String
+) -> Result<(), String> {
 
     let conn = get_connection(&app)?;
     let sql = "UPDATE tasks
@@ -155,12 +167,34 @@ conn.execute("UPDATE tasks
 }
 
 #[tauri::command]
-pub fn delete_task(app: tauri::AppHandle, id: i64) -> Result<(), String> {
+pub fn move_to_trash(
+    app: tauri::AppHandle,
+    id: i64
+) -> Result<(), String> {
     let conn = get_connection(&app)?;
 
     conn.execute(
-        "DELETE FROM tasks
-                 WHERE id = ?",
+        " UPDATE tasks
+          SET in_trash = 1
+          WHERE id = ?",
+        params![id],
+    )
+    .map_err(|err| err.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_from_trash(
+    app: tauri::AppHandle,
+    id: i64
+) -> Result<(), String> {
+    let conn = get_connection(&app)?;
+
+    conn.execute(
+        " DELETE FROM tasks
+          WHERE id = ?
+          AND in_trash = 1",
         params![id],
     )
     .map_err(|err| err.to_string())?;

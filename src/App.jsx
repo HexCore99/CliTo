@@ -10,11 +10,15 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTaskStore } from "./stores/useTaskStore";
 import { useSortingStore } from "./stores/useSortingStore";
+import { useBoardStore } from "./stores/useBoardStore";
+import TrashBoard from "./components/TrashBoard";
 
 export default function App() {
   const [uiConfig, setUiConfig] = useState(null);
 
   const loadTasks = useTaskStore((state) => state.loadTasks);
+  const boardState = useBoardStore((state) => state.states);
+
   const loadInitialSorting = useSortingStore(
     (state) => state.loadInitialSorting,
   );
@@ -30,7 +34,7 @@ export default function App() {
       setUiConfig(savedUiConfig);
     }
     loadTasks();
-    
+
     loadInitialConfig();
     loadInitialSorting();
   }, [loadTasks, loadInitialSorting]);
@@ -45,19 +49,6 @@ export default function App() {
     });
   }
 
-  function setNavItemOpen(title, open) {
-    saveUiConfig({
-      ...uiConfig,
-      sidebar: {
-        ...uiConfig.sidebar,
-        navOpenItems: {
-          ...uiConfig.sidebar.navOpenItems,
-          [title]: open,
-        },
-      },
-    });
-  }
-
   if (!uiConfig) return null;
 
   return (
@@ -66,10 +57,7 @@ export default function App() {
         open={uiConfig.sidebar.open}
         onOpenChange={setSidebarOpen}
       >
-        <AppSidebar
-          sidebarConfig={uiConfig.sidebar}
-          onNavItemOpenChange={setNavItemOpen}
-        />
+        <AppSidebar sidebarConfig={uiConfig.sidebar} />
 
         <SidebarInset>
           <header className="flex h-14 items-center gap-3 border-b px-4">
@@ -77,7 +65,8 @@ export default function App() {
           </header>
 
           <main className="p-6"></main>
-          <TaskBoard />
+
+          {boardState.active === "All" ? <TaskBoard /> : <TrashBoard />}
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

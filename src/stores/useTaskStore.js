@@ -71,9 +71,7 @@ export const useTaskStore = create((set, get) => ({
         TASK_STATUSES.map((status) => [
           status,
           state.tasks[status].map((task) =>
-            Number(task.id) === id
-              ? { ...task, [fieldName]: newValue }
-              : task,
+            Number(task.id) === id ? { ...task, [fieldName]: newValue } : task,
           ),
         ]),
       ),
@@ -104,8 +102,8 @@ export const useTaskStore = create((set, get) => ({
     await get().loadTasks();
   },
 
-  deleteTask: async (taskId) => {
-    await invoke("delete_task", { id: taskId });
+  move_to_trash: async (taskId) => {
+    await invoke("move_to_trash", { id: taskId });
 
     set((state) => ({
       tasks: Object.fromEntries(
@@ -162,11 +160,6 @@ export const useTaskStore = create((set, get) => ({
     });
 
     get().updateTaskField(taskId, "priority", newPriority);
-    // set((state) => ({
-    //   tasks: state.tasks.map((task) =>
-    //     Number(task.id) === id ? { ...task, priority: newPriority } : task,
-    //   ),
-    // }));
   },
 
   set_date: async (taskId, newDate) => {

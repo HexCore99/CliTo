@@ -29,7 +29,7 @@ export default function TaskBoard() {
 
   const createTask = useTaskStore((state) => state.createTask);
 
-  const deleteTask = useTaskStore((state) => state.deleteTask);
+  const move_to_trash = useTaskStore((state) => state.move_to_trash);
 
   function getDropStatus(overId, taskList) {
     //can be task or column
@@ -158,7 +158,7 @@ export default function TaskBoard() {
                 strategy={verticalListSortingStrategy}
               >
                 {columnTasks.map((task) => (
-                  <Task key={task.id} task={task} onDelete={deleteTask} />
+                  <Task key={task.id} task={task} onDelete={move_to_trash} />
                 ))}
               </SortableContext>
             </TaskColumn>
