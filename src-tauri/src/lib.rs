@@ -21,6 +21,8 @@ pub fn run() {
             projects::get_project_tree,
             projects::create_project,
             projects::create_board,
+            projects::delete_board,
+            projects::delete_project,
             tasks::get_tasks,
             tasks::get_trash_tasks,
             tasks::create_task,

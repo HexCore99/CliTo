@@ -4,6 +4,7 @@ import {
   FolderIcon,
   LayoutDashboardIcon,
   PlusIcon,
+  Trash2Icon,
 } from "lucide-react";
 import {
   Collapsible,
@@ -24,12 +25,15 @@ import {
 } from "@/components/ui/sidebar";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useBoardStore } from "@/stores/useBoardStore";
+import TrashConfirmDialog from "@/components/trash/TrashConfirmDialog";
 
 export function NavProjects() {
   const projects = useProjectStore((state) => state.projects);
   const error = useProjectStore((state) => state.error);
   const createProject = useProjectStore((state) => state.createProject);
   const createBoard = useProjectStore((state) => state.createBoard);
+  const deleteProject = useProjectStore((state) => state.deleteProject);
+  const deleteBoard = useProjectStore((state) => state.deleteBoard);
   const clearError = useProjectStore((state) => state.clearError);
   const boardState = useBoardStore((state) => state.states);
   const setBoardState = useBoardStore((state) => state.set_state);
@@ -38,6 +42,8 @@ export function NavProjects() {
   const [projectName, setProjectName] = useState("");
   const [creatingBoardFor, setCreatingBoardFor] = useState(null);
   const [boardName, setBoardName] = useState("");
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleCreateProject(event) {
     event.preventDefault();
@@ -92,6 +98,74 @@ export function NavProjects() {
     });
   }
 
+  function requestDeleteProject(event, project) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setPendingDelete({
+      type: "project",
+      project,
+    });
+  }
+
+  function requestDeleteBoard(event, project, board) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setPendingDelete({
+      type: "board",
+      project,
+      board,
+    });
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+
+    setIsDeleting(true);
+
+    try {
+      if (pendingDelete.type === "project") {
+        const { project } = pendingDelete;
+
+        await deleteProject(project.id);
+
+        if (boardState.projectId === project.id) {
+          setBoardState({
+            type: "general",
+            projectId: null,
+            boardId: null,
+            title: "All",
+          });
+        }
+      } else {
+        const { project, board } = pendingDelete;
+
+        await deleteBoard(project.id, board.id);
+
+        if (boardState.boardId === board.id) {
+          setBoardState({
+            type: "general",
+            projectId: null,
+            boardId: null,
+            title: "All",
+          });
+        }
+      }
+
+      setPendingDelete(null);
+    } catch {
+      // The store already exposes the backend error.
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  const deletingProject = pendingDelete?.type === "project";
+  const deleteTargetName = deletingProject
+    ? pendingDelete?.project.name
+    : pendingDelete?.board.name;
+
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Projects</SidebarGroupLabel>
@@ -137,7 +211,10 @@ export function NavProjects() {
           >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={project.name}>
+                <SidebarMenuButton
+                  tooltip={project.name}
+                  className="pr-14"
+                >
                   <ChevronRightIcon className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
                   <FolderIcon />
                   <span>{project.name}</span>
@@ -147,6 +224,7 @@ export function NavProjects() {
               <SidebarMenuAction
                 type="button"
                 showOnHover
+                className="right-7"
                 title={`Create board in ${project.name}`}
                 aria-label={`Create board in ${project.name}`}
                 onClick={(event) => beginCreatingBoard(event, project.id)}
@@ -154,12 +232,27 @@ export function NavProjects() {
                 <PlusIcon />
               </SidebarMenuAction>
 
+              <SidebarMenuAction
+                type="button"
+                showOnHover
+                title={`Delete ${project.name}`}
+                aria-label={`Delete ${project.name}`}
+                className="text-destructive hover:text-destructive"
+                onClick={(event) => requestDeleteProject(event, project)}
+              >
+                <Trash2Icon />
+              </SidebarMenuAction>
+
               <CollapsibleContent>
                 <SidebarMenuSub>
                   {project.boards.map((board) => (
-                    <SidebarMenuSubItem key={board.id}>
+                    <SidebarMenuSubItem
+                      key={board.id}
+                      className="group/board"
+                    >
                       <SidebarMenuSubButton
                         href="#"
+                        className="pr-7"
                         isActive={
                           boardState.type === "board" &&
                           boardState.boardId === board.id
@@ -171,6 +264,18 @@ export function NavProjects() {
                         <LayoutDashboardIcon />
                         <span>{board.name}</span>
                       </SidebarMenuSubButton>
+
+                      <button
+                        type="button"
+                        title={`Delete ${board.name}`}
+                        aria-label={`Delete ${board.name}`}
+                        className="absolute right-1 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-destructive opacity-0 transition-opacity hover:bg-sidebar-accent group-hover/board:opacity-100 focus-visible:opacity-100"
+                        onClick={(event) =>
+                          requestDeleteBoard(event, project, board)
+                        }
+                      >
+                        <Trash2Icon className="size-3.5" />
+                      </button>
                     </SidebarMenuSubItem>
                   ))}
 
@@ -207,6 +312,18 @@ export function NavProjects() {
       </SidebarMenu>
 
       {error && <p className="mt-2 px-2 text-xs text-destructive">{error}</p>}
+
+      <TrashConfirmDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+        title={deletingProject ? "Delete this project?" : "Delete this board?"}
+        description={`"${deleteTargetName ?? "Untitled"}" will be removed. Any tasks inside it will be moved to Trash.`}
+        confirmLabel={deletingProject ? "Delete project" : "Delete board"}
+        onConfirm={confirmDelete}
+        isConfirming={isDeleting}
+      />
     </SidebarGroup>
   );
 }

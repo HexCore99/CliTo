@@ -1,4 +1,4 @@
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
 // crate means current Rust Project/Module. crate = root
@@ -244,24 +244,57 @@ pub fn move_to_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> {
 
 #[tauri::command]
 pub fn restore_from_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> {
-    let conn = get_connection(&app)?;
+    let mut conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    conn.execute(
-        " UPDATE tasks
-          SET in_trash = 0
-          WHERE id = ?",
+    let board_id: Option<i64> = tx
+        .query_row(
+            "SELECT board_id
+             FROM tasks
+             WHERE id = ?
+             AND in_trash = 1",
+            params![id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|err| err.to_string())?
+        .ok_or_else(|| "Trashed task does not exist".to_string())?;
+
+    if let Some(board_id) = board_id {
+        tx.execute(
+            "UPDATE projects
+             SET in_trash = 0
+             WHERE id = (
+                SELECT project_id FROM boards WHERE id = ?
+             )",
+            params![board_id],
+        )
+        .map_err(|err| err.to_string())?;
+
+        tx.execute(
+            "UPDATE boards SET in_trash = 0 WHERE id = ?",
+            params![board_id],
+        )
+        .map_err(|err| err.to_string())?;
+    }
+
+    tx.execute(
+        "UPDATE tasks SET in_trash = 0 WHERE id = ?",
         params![id],
     )
     .map_err(|err| err.to_string())?;
+
+    tx.commit().map_err(|err| err.to_string())?;
 
     Ok(())
 }
 
 #[tauri::command]
 pub fn delete_from_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> {
-    let conn = get_connection(&app)?;
+    let mut conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    conn.execute(
+    tx.execute(
         " DELETE FROM tasks
           WHERE id = ?
           AND in_trash = 1",
@@ -269,19 +302,57 @@ pub fn delete_from_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> {
     )
     .map_err(|err| err.to_string())?;
 
+    tx.execute(
+        "DELETE FROM boards
+         WHERE in_trash = 1
+         AND NOT EXISTS (
+            SELECT 1 FROM tasks WHERE tasks.board_id = boards.id
+         )",
+        [],
+    )
+    .map_err(|err| err.to_string())?;
+
+    tx.execute(
+        "DELETE FROM projects
+         WHERE in_trash = 1
+         AND NOT EXISTS (
+            SELECT 1 FROM boards WHERE boards.project_id = projects.id
+         )",
+        [],
+    )
+    .map_err(|err| err.to_string())?;
+
+    tx.commit().map_err(|err| err.to_string())?;
+
     Ok(())
 }
 
 #[tauri::command]
 pub fn empty_trash(app: tauri::AppHandle) -> Result<(), String> {
-    let conn = get_connection(&app)?;
+    let mut conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    conn.execute(
+    tx.execute(
         " DELETE FROM tasks
           WHERE in_trash = 1",
         [],
     )
     .map_err(|err| err.to_string())?;
+
+    tx.execute("DELETE FROM boards WHERE in_trash = 1", [])
+        .map_err(|err| err.to_string())?;
+
+    tx.execute(
+        "DELETE FROM projects
+         WHERE in_trash = 1
+         AND NOT EXISTS (
+            SELECT 1 FROM boards WHERE boards.project_id = projects.id
+         )",
+        [],
+    )
+    .map_err(|err| err.to_string())?;
+
+    tx.commit().map_err(|err| err.to_string())?;
 
     Ok(())
 }

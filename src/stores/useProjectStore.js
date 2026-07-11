@@ -73,6 +73,50 @@ export const useProjectStore = create((set) => ({
     }
   },
 
+  deleteProject: async (projectId) => {
+    set({ error: null });
+
+    try {
+      await invoke("delete_project", { projectId });
+
+      set((state) => ({
+        projects: state.projects.filter(
+          (project) => project.id !== projectId,
+        ),
+      }));
+    } catch (error) {
+      set({ error: String(error) });
+      throw error;
+    }
+  },
+
+  deleteBoard: async (projectId, boardId) => {
+    set({ error: null });
+
+    try {
+      await invoke("delete_board", {
+        projectId,
+        boardId,
+      });
+
+      set((state) => ({
+        projects: state.projects.map((project) =>
+          project.id === projectId
+            ? {
+                ...project,
+                boards: project.boards.filter(
+                  (board) => board.id !== boardId,
+                ),
+              }
+            : project,
+        ),
+      }));
+    } catch (error) {
+      set({ error: String(error) });
+      throw error;
+    }
+  },
+
   clearError: () => {
     set({ error: null });
   },
