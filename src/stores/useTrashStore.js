@@ -32,6 +32,6 @@ export const useTrashStore = create((set) => ({
 
   empty_trash: async () => {
     await invoke("empty_trash");
-    set({ trashTasks: [] });
+    set({ trashTasks:[] });
   },
 }));

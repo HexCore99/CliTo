@@ -8,6 +8,8 @@ use crate::db::get_connection;
 #[derive(Serialize, Deserialize)] //Tell the compiler that, task can be converted to JSON.
 pub struct Task {
     id: i64,
+    #[serde(default)]
+    board_id: Option<i64>,
     name: String,
     status: String,
     position: i32,
@@ -17,28 +19,30 @@ pub struct Task {
 }
 
 #[tauri::command] // allow this function to be called from the frontend
-pub fn get_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
+pub fn get_tasks(app: tauri::AppHandle, board_id: Option<i64>) -> Result<Vec<Task>, String> {
     let conn = get_connection(&app)?; // why not map_err here?
 
     let mut stmt = conn
         .prepare(
-            "SELECT id,name,status,position,priority,due_date,description
+            "SELECT id,board_id,name,status,position,priority,due_date,description
          FROM tasks
          WHERE in_trash = 0
+         AND board_id IS ?
          ORDER BY position ASC",
         )
         .map_err(|e| e.to_string())?;
 
     let tasks = stmt
-        .query_map([], |row| {
+        .query_map(params![board_id], |row| {
             Ok(Task {
                 id: row.get(0)?,
-                name: row.get(1)?,
-                status: row.get(2)?,
-                position: row.get(3)?,
-                priority: row.get(4)?,
-                due_date: row.get(5)?,
-                description: row.get(6)?,
+                board_id: row.get(1)?,
+                name: row.get(2)?,
+                status: row.get(3)?,
+                position: row.get(4)?,
+                priority: row.get(5)?,
+                due_date: row.get(6)?,
+                description: row.get(7)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -53,7 +57,7 @@ pub fn get_trash_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
     let conn = get_connection(&app).map_err(|err| err.to_string())?;
     let mut stmt = conn
         .prepare(
-            "SELECT id,name,status,position,priority,due_date,description
+            "SELECT id,board_id,name,status,position,priority,due_date,description
           FROM tasks
           WHERE in_trash = 1
           ORDER BY position ASC",
@@ -63,12 +67,13 @@ pub fn get_trash_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
         .query_map([], |row| {
             Ok(Task {
                 id: row.get(0)?,
-                name: row.get(1)?,
-                status: row.get(2)?,
-                position: row.get(3)?,
-                priority: row.get(4)?,
-                due_date: row.get(5)?,
-                description: row.get(6)?,
+                board_id: row.get(1)?,
+                name: row.get(2)?,
+                status: row.get(3)?,
+                position: row.get(4)?,
+                priority: row.get(5)?,
+                due_date: row.get(6)?,
+                description: row.get(7)?,
             })
         })
         .map_err(|err| err.to_string())?
@@ -84,22 +89,51 @@ pub fn create_task(
     priority: i32,
     due_date: Option<String>,
     description: Option<String>,
+    board_id: Option<i64>,
 ) -> Result<(), String> {
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
     let id = chrono::Utc::now().timestamp_millis(); // chrono -> time library
 
-    // Update the position by 1
-    tx.execute("UPDATE tasks SET position = position + 1", [])
+    if let Some(selected_board_id) = board_id {
+        let board_exists: bool = tx
+            .query_row(
+                "SELECT EXISTS(
+                    SELECT 1
+                    FROM boards
+                    JOIN projects ON projects.id = boards.project_id
+                    WHERE boards.id = ?
+                    AND boards.in_trash = 0
+                    AND projects.in_trash = 0
+                )",
+                params![selected_board_id],
+                |row| row.get(0),
+            )
+            .map_err(|err| err.to_string())?;
+
+        if !board_exists {
+            return Err("The selected board does not exist".to_string());
+        }
+    }
+
+    // Only shift Todo tasks that belong to the selected board.
+    tx.execute(
+        "UPDATE tasks
+         SET position = position + 1
+         WHERE board_id IS ?
+         AND status = 'todo'
+         AND in_trash = 0",
+        params![board_id],
+    )
         .map_err(|e| e.to_string())?;
 
     // insert with new pos
     tx.execute(
         "INSERT INTO tasks
-                 (id,name,position,priority,due_date,description)
-                 VALUES(?,?,?,?,?,?)",
-        params![id, name, 0, priority, due_date, description],
+                 (id,board_id,name,position,priority,due_date,description)
+                 VALUES(?,?,?,?,?,?,?)",
+        params![id, board_id, name, 0, priority, due_date, description],
     )
     .map_err(|err| err.to_string())?;
 
@@ -109,7 +143,11 @@ pub fn create_task(
 }
 
 #[tauri::command]
-pub fn update_position(app: tauri::AppHandle, tasks: Vec<Task>) -> Result<(), String> {
+pub fn update_position(
+    app: tauri::AppHandle,
+    tasks: Vec<Task>,
+    board_id: Option<i64>,
+) -> Result<(), String> {
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|err| err.to_string())?;
 
@@ -118,6 +156,10 @@ pub fn update_position(app: tauri::AppHandle, tasks: Vec<Task>) -> Result<(), St
     let mut complete_position: i32 = 0;
 
     for task in tasks {
+        if task.board_id != board_id {
+            return Err("Cannot reorder tasks from different boards".to_string());
+        }
+
         let position = match task.status.as_str() {
             "todo" => {
                 let current = todo_position;
@@ -141,8 +183,11 @@ pub fn update_position(app: tauri::AppHandle, tasks: Vec<Task>) -> Result<(), St
         };
 
         tx.execute(
-            "UPDATE tasks SET position = ? WHERE id = ?",
-            params![position, task.id],
+            "UPDATE tasks
+             SET position = ?
+             WHERE id = ?
+             AND board_id IS ?",
+            params![position, task.id, board_id],
         )
         .map_err(|err| err.to_string())?;
     }
@@ -293,6 +338,7 @@ pub fn sort_tasks(
     app: tauri::AppHandle,
     column_name: String,
     sort_option: String,
+    board_id: Option<i64>,
 ) -> Result<Vec<Task>, String> {
     if !matches!(column_name.as_str(), "todo" | "in-progress" | "completed") {
         return Err(format!("Invalid column name: {}", column_name));
@@ -310,9 +356,10 @@ pub fn sort_tasks(
     };
 
     let query = format!(
-        "SELECT id,name,status,position,priority,due_date,description
+        "SELECT id,board_id,name,status,position,priority,due_date,description
          FROM tasks
          WHERE status = ?
+         AND board_id IS ?
          AND in_trash = 0
          ORDER BY {}",
         order_by_clause
@@ -321,15 +368,16 @@ pub fn sort_tasks(
     let mut stmt = conn.prepare(&query).map_err(|err| err.to_string())?;
 
     let tasks = stmt
-        .query_map([column_name], |row| {
+        .query_map(params![column_name, board_id], |row| {
             Ok(Task {
                 id: row.get(0)?,
-                name: row.get(1)?,
-                status: row.get(2)?,
-                position: row.get(3)?,
-                priority: row.get(4)?,
-                due_date: row.get(5)?,
-                description: row.get(6)?,
+                board_id: row.get(1)?,
+                name: row.get(2)?,
+                status: row.get(3)?,
+                position: row.get(4)?,
+                priority: row.get(5)?,
+                due_date: row.get(6)?,
+                description: row.get(7)?,
             })
         })
         .map_err(|err| err.to_string())?

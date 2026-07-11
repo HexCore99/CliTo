@@ -13,15 +13,20 @@ import { useSortingStore } from "./stores/useSortingStore";
 import { useBoardStore } from "./stores/useBoardStore";
 import {useTrashStore} from "./stores/useTrashStore"
 import TrashBoard from "./components/TrashBoard";
+import { useProjectStore } from "./stores/useProjectStore";
 
 export default function App() {
   const [uiConfig, setUiConfig] = useState(null);
 
   const loadTasks = useTaskStore((state) => state.loadTasks);
   const boardState = useBoardStore((state) => state.states);
+  const loadProjects = useProjectStore((state) => state.loadProjects);
 
   const loadInitialSorting = useSortingStore(
     (state) => state.loadInitialSorting,
+  );
+  const applyCurrentSorting = useSortingStore(
+    (state) => state.applyCurrentSorting,
   );
 
   async function saveUiConfig(nextConfig) {
@@ -34,11 +39,32 @@ export default function App() {
       const savedUiConfig = await invoke("get_ui_config");
       setUiConfig(savedUiConfig);
     }
-    loadTasks();
+    loadProjects();
 
     loadInitialConfig();
     loadInitialSorting();
-  }, [loadTasks, loadInitialSorting]);
+  }, [loadProjects, loadInitialSorting]);
+
+  useEffect(() => {
+    if (boardState.type === "trash") return;
+
+    const boardId = boardState.type === "board" ? boardState.boardId : null;
+
+    async function loadSelectedBoard() {
+      const loaded = await loadTasks(boardId);
+
+      if (loaded) {
+        await applyCurrentSorting(boardId);
+      }
+    }
+
+    loadSelectedBoard();
+  }, [
+    boardState.type,
+    boardState.boardId,
+    loadTasks,
+    applyCurrentSorting,
+  ]);
 
   function setSidebarOpen(open) {
     saveUiConfig({
@@ -63,11 +89,12 @@ export default function App() {
         <SidebarInset>
           <header className="flex h-14 items-center gap-3 border-b px-4">
             <SidebarTrigger />
+            <span className="font-medium">{boardState.title}</span>
           </header>
 
           <main className="p-6"></main>
 
-          {boardState.active === "All" ? <TaskBoard /> : <TrashBoard />}
+          {boardState.type === "trash" ? <TrashBoard /> : <TaskBoard />}
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

@@ -114,7 +114,7 @@ export default function TrashTaskCard({
             {status.label}
           </span>
 
-          <h2 className="mt-3 break-words text-base leading-6 font-medium">
+          <h2 className="mt-3 wrap-break-words text-base leading-6 font-medium">
             {task.name || "Untitled task"}
           </h2>
 

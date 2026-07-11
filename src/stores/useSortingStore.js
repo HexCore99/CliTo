@@ -23,8 +23,10 @@ export const useSortingStore = create((set, get) => ({
     set({ sortOptions: newSortOptions });
 
     // sort all columns, cz default task loads in db-order
+    const boardId = useTaskStore.getState().currentBoardId;
+
     for (const [columnName, sortOption] of Object.entries(newSortOptions)) {
-      await get().sortColumn(columnName, sortOption);
+      await get().sortColumn(columnName, sortOption, boardId, false);
     }
   },
 
@@ -43,7 +45,12 @@ export const useSortingStore = create((set, get) => ({
     await invoke("save_ui_config", { config: newConfig });
   },
 
-  sortColumn: async (columnName, sortOption) => {
+  sortColumn: async (
+    columnName,
+    sortOption,
+    boardId = useTaskStore.getState().currentBoardId,
+    persistConfig = true,
+  ) => {
     set((state) => ({
       sortOptions: {
         ...state.sortOptions,
@@ -54,17 +61,31 @@ export const useSortingStore = create((set, get) => ({
     const sortedTasks = await invoke("sort_tasks", {
       columnName,
       sortOption,
+      boardId,
     });
 
+    if (useTaskStore.getState().currentBoardId !== boardId) {
+      return sortedTasks;
+    }
 
     useTaskStore.getState().setTasks((currentTasks) => ({
       ...currentTasks,
       [columnName]: sortedTasks,
     }));
 
-    get().updateUiConfig(columnName, sortOption);
+    if (persistConfig) {
+      await get().updateUiConfig(columnName, sortOption);
+    }
 
     return sortedTasks;
+  },
+
+  applyCurrentSorting: async (boardId) => {
+    const sortOptions = get().sortOptions;
+
+    for (const [columnName, sortOption] of Object.entries(sortOptions)) {
+      await get().sortColumn(columnName, sortOption, boardId, false);
+    }
   },
 
   getSortConfig: () => {

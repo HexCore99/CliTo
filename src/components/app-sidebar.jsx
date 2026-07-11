@@ -20,7 +20,6 @@ const data = {
       icon: <Trash2Icon />,
     },
   ],
-  projects: [],
 };
 
 export function AppSidebar({ sidebarConfig, ...props }) {
@@ -32,7 +31,7 @@ export function AppSidebar({ sidebarConfig, ...props }) {
     >
       <SidebarContent>
         <NavGeneral items={data.general} />
-        <NavProjects projects={data.projects} />
+        <NavProjects />
       </SidebarContent>
       <SidebarRail />
     </Sidebar>

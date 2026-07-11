@@ -13,23 +13,28 @@ export function NavGeneral({ items }) {
 
   function handleOnClick(event, item) {
     event.preventDefault();
-    const newStates = {
-      active: item.title,
-    };
-    setBoardState(newStates);
+
+    setBoardState({
+      type: item.title === "Trash" ? "trash" : "general",
+      projectId: null,
+      boardId: null,
+      title: item.title,
+    });
   }
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>General</SidebarGroupLabel>
       <SidebarMenu>
-        <div className="space-y-2 flex-col">
+        
+        <div className="space-y-2 flex-col ">
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
                 className={`cursor-pointer transition-colors hover:bg-slate-300!
-                  ${boardState.active === item.title ? "bg-sky-500!" : ""}`}
+                  ${boardState.title === item.title ? "bg-sky-500!" : ""}`}
               >
                 <a
                   href={item.url}

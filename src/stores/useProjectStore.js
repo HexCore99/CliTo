@@ -1,0 +1,79 @@
+import { invoke } from "@tauri-apps/api/core";
+import { create } from "zustand";
+
+export const useProjectStore = create((set) => ({
+  projects: [],
+  isLoading: false,
+  error: null,
+
+  loadProjects: async () => {
+    set({
+      isLoading: true,
+      error: null,
+    });
+
+    try {
+      const projects = await invoke("get_project_tree");
+
+      set({
+        projects,
+        isLoading: false,
+      });
+    } catch (error) {
+      set({
+        error: String(error),
+        isLoading: false,
+      });
+    }
+  },
+
+  createProject: async (name) => {
+    set({ error: null });
+
+    try {
+      const createdProject = await invoke("create_project", {
+        name,
+      });
+
+      set((state) => ({
+        projects: [...state.projects, createdProject],
+      }));
+
+      return createdProject;
+    } catch (error) {
+      set({ error: String(error) });
+      throw error;
+    }
+  },
+
+  createBoard: async (projectId, name) => {
+    set({ error: null });
+
+    try {
+      const createdBoard = await invoke("create_board", {
+        projectId,
+        name,
+      });
+
+      set((state) => ({
+        projects: state.projects.map((project) =>
+          project.id === projectId
+            ? {
+                ...project,
+                boards: [...project.boards, createdBoard],
+              }
+            : project,
+        ),
+      }));
+
+      return createdBoard;
+    } catch (error) {
+      set({ error: String(error) });
+      throw error;
+    }
+  },
+
+  clearError: () => {
+    set({ error: null });
+  },
+}));
