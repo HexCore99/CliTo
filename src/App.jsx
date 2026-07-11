@@ -49,12 +49,13 @@ export default function App() {
     if (boardState.type === "trash") return;
 
     const boardId = boardState.type === "board" ? boardState.boardId : null;
+    const includeAll = boardState.type === "general";
 
     async function loadSelectedBoard() {
-      const loaded = await loadTasks(boardId);
+      const loaded = await loadTasks(boardId, includeAll);
 
       if (loaded) {
-        await applyCurrentSorting(boardId);
+        await applyCurrentSorting(boardId, includeAll);
       }
     }
 
@@ -76,6 +77,19 @@ export default function App() {
     });
   }
 
+  function setNavItemOpen(itemKey, open) {
+    saveUiConfig({
+      ...uiConfig,
+      sidebar: {
+        ...uiConfig.sidebar,
+        navOpenItems: {
+          ...uiConfig.sidebar.navOpenItems,
+          [itemKey]: open,
+        },
+      },
+    });
+  }
+
   if (!uiConfig) return null;
 
   return (
@@ -84,7 +98,10 @@ export default function App() {
         open={uiConfig.sidebar.open}
         onOpenChange={setSidebarOpen}
       >
-        <AppSidebar sidebarConfig={uiConfig.sidebar} />
+        <AppSidebar
+          sidebarConfig={uiConfig.sidebar}
+          onNavItemOpenChange={setNavItemOpen}
+        />
 
         <SidebarInset>
           <header className="flex h-14 items-center gap-3 border-b px-4">

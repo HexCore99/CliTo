@@ -1,5 +1,6 @@
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 // crate means current Rust Project/Module. crate = root
 use crate::db::get_connection;
@@ -19,7 +20,11 @@ pub struct Task {
 }
 
 #[tauri::command] // allow this function to be called from the frontend
-pub fn get_tasks(app: tauri::AppHandle, board_id: Option<i64>) -> Result<Vec<Task>, String> {
+pub fn get_tasks(
+    app: tauri::AppHandle,
+    board_id: Option<i64>,
+    include_all: bool,
+) -> Result<Vec<Task>, String> {
     let conn = get_connection(&app)?; // why not map_err here?
 
     let mut stmt = conn
@@ -27,13 +32,13 @@ pub fn get_tasks(app: tauri::AppHandle, board_id: Option<i64>) -> Result<Vec<Tas
             "SELECT id,board_id,name,status,position,priority,due_date,description
          FROM tasks
          WHERE in_trash = 0
-         AND board_id IS ?
+         AND (? = 1 OR board_id IS ?)
          ORDER BY position ASC",
         )
         .map_err(|e| e.to_string())?;
 
     let tasks = stmt
-        .query_map(params![board_id], |row| {
+        .query_map(params![include_all, board_id], |row| {
             Ok(Task {
                 id: row.get(0)?,
                 board_id: row.get(1)?,
@@ -147,47 +152,33 @@ pub fn update_position(
     app: tauri::AppHandle,
     tasks: Vec<Task>,
     board_id: Option<i64>,
+    include_all: bool,
 ) -> Result<(), String> {
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    let mut todo_position: i32 = 0;
-    let mut in_progress_position: i32 = 0;
-    let mut complete_position: i32 = 0;
+    let mut positions: HashMap<(Option<i64>, String), i32> = HashMap::new();
 
     for task in tasks {
-        if task.board_id != board_id {
+        if !include_all && task.board_id != board_id {
             return Err("Cannot reorder tasks from different boards".to_string());
         }
 
-        let position = match task.status.as_str() {
-            "todo" => {
-                let current = todo_position;
-                todo_position += 1;
-                current
-            }
-            "in-progress" => {
-                let current = in_progress_position;
-                in_progress_position += 1;
-                current
-            }
+        if !matches!(task.status.as_str(), "todo" | "in-progress" | "completed") {
+            return Err(format!("Unknown task status: {}", task.status));
+        }
 
-            "completed" => {
-                let current = complete_position;
-                complete_position += 1;
-                current
-            }
-            unknown => {
-                return Err(format!("Unknown task status:{unknown}"));
-            }
-        };
+        let position_key = (task.board_id, task.status.clone());
+        let next_position = positions.entry(position_key).or_insert(0);
+        let position = *next_position;
+        *next_position += 1;
 
         tx.execute(
             "UPDATE tasks
              SET position = ?
              WHERE id = ?
              AND board_id IS ?",
-            params![position, task.id, board_id],
+            params![position, task.id, task.board_id],
         )
         .map_err(|err| err.to_string())?;
     }
@@ -410,6 +401,7 @@ pub fn sort_tasks(
     column_name: String,
     sort_option: String,
     board_id: Option<i64>,
+    include_all: bool,
 ) -> Result<Vec<Task>, String> {
     if !matches!(column_name.as_str(), "todo" | "in-progress" | "completed") {
         return Err(format!("Invalid column name: {}", column_name));
@@ -430,7 +422,7 @@ pub fn sort_tasks(
         "SELECT id,board_id,name,status,position,priority,due_date,description
          FROM tasks
          WHERE status = ?
-         AND board_id IS ?
+         AND (? = 1 OR board_id IS ?)
          AND in_trash = 0
          ORDER BY {}",
         order_by_clause
@@ -439,7 +431,7 @@ pub fn sort_tasks(
     let mut stmt = conn.prepare(&query).map_err(|err| err.to_string())?;
 
     let tasks = stmt
-        .query_map(params![column_name, board_id], |row| {
+        .query_map(params![column_name, include_all, board_id], |row| {
             Ok(Task {
                 id: row.get(0)?,
                 board_id: row.get(1)?,

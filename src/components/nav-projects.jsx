@@ -27,7 +27,7 @@ import { useProjectStore } from "@/stores/useProjectStore";
 import { useBoardStore } from "@/stores/useBoardStore";
 import TrashConfirmDialog from "@/components/trash/TrashConfirmDialog";
 
-export function NavProjects() {
+export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
   const projects = useProjectStore((state) => state.projects);
   const error = useProjectStore((state) => state.error);
   const createProject = useProjectStore((state) => state.createProject);
@@ -206,7 +206,10 @@ export function NavProjects() {
           <Collapsible
             key={project.id}
             asChild
-            defaultOpen
+            open={navOpenItems[`project:${project.id}`] ?? true}
+            onOpenChange={(open) =>
+              onNavItemOpenChange?.(`project:${project.id}`, open)
+            }
             className="group/collapsible"
           >
             <SidebarMenuItem>
