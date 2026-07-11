@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 mod db;
+mod projects;
 mod tasks;
 mod ui_config;
 
@@ -17,6 +18,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             greet,
+            projects::get_project_tree,
+            projects::create_project,
+            projects::create_board,
+            projects::delete_board,
+            projects::delete_project,
             tasks::get_tasks,
             tasks::get_trash_tasks,
             tasks::create_task,

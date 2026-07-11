@@ -1,9 +1,11 @@
-import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 
-export const useBoardStore = create((set, get) => ({
+export const useBoardStore = create((set) => ({
   states: {
-    active: "All",
+    type: "general",
+    projectId: null,
+    boardId: null,
+    title: "All",
   },
 
   set_state: (newState) => {

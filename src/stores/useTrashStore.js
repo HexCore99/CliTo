@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { useTaskStore } from "./useTaskStore";
+import { useProjectStore } from "./useProjectStore";
 export const useTrashStore = create((set) => ({
   trashTasks: [],
 
@@ -17,6 +18,7 @@ export const useTrashStore = create((set) => ({
         (task) => Number(task.id) !== Number(taskId),
       ),
     }));
+    await useProjectStore.getState().loadProjects();
     await useTaskStore.getState().loadTasks();
   },
 
@@ -32,6 +34,6 @@ export const useTrashStore = create((set) => ({
 
   empty_trash: async () => {
     await invoke("empty_trash");
-    set({ trashTasks: [] });
+    set({ trashTasks:[] });
   },
 }));

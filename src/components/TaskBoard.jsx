@@ -24,6 +24,7 @@ const columns = [
 
 export default function TaskBoard() {
   const tasks = useTaskStore((state) => state.tasks);
+  const currentBoardId = useTaskStore((state) => state.currentBoardId);
 
   const setTasks = useTaskStore((state) => state.setTasks);
 
@@ -112,7 +113,10 @@ export default function TaskBoard() {
     const tasksToPersist = flattenTasks(tasksByStatus);
 
     setTasks(tasksByStatus);
-    await invoke("update_position", { tasks: tasksToPersist });
+    await invoke("update_position", {
+      tasks: tasksToPersist,
+      boardId: currentBoardId,
+    });
     await invoke("update_task_status", {
       id: Number(activeTaskId),
       status: nextStatus,

@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { newMenu } from "@tauri-apps/api/menu/base";
 import { create } from "zustand";
 
 export const TASK_STATUSES = ["todo", "in-progress", "completed"];
@@ -54,6 +53,7 @@ function moveTaskToColumn(tasksByStatus, taskId, newStatus) {
 
 export const useTaskStore = create((set, get) => ({
   tasks: createTaskColumns(),
+  currentBoardId: null,
 
   setTasks: (newTasks) => {
     //newTasks can be task array or function
@@ -78,12 +78,27 @@ export const useTaskStore = create((set, get) => ({
     }));
   },
 
-  loadTasks: async () => {
-    const tasksFromDB = await invoke("get_tasks");
+  loadTasks: async (boardId = get().currentBoardId) => {
+    const selectedBoardId = boardId ?? null;
+
+    set({
+      currentBoardId: selectedBoardId,
+      tasks: createTaskColumns(),
+    });
+
+    const tasksFromDB = await invoke("get_tasks", {
+      boardId: selectedBoardId,
+    });
+
+    if (get().currentBoardId !== selectedBoardId) {
+      return false;
+    }
 
     set({
       tasks: groupTasksByStatus(tasksFromDB),
     });
+
+    return true;
   },
 
   createTask: async (task) => {
@@ -91,15 +106,17 @@ export const useTaskStore = create((set, get) => ({
     const priority = task.priority ?? 4;
     const due_date = task.due_date ?? null;
     const description = task.description ?? null;
+    const boardId = get().currentBoardId;
 
     await invoke("create_task", {
       name: name,
       priority: priority,
       dueDate: due_date,
       description: description,
+      boardId,
     });
 
-    await get().loadTasks();
+    await get().loadTasks(boardId);
   },
 
   move_to_trash: async (taskId) => {
@@ -145,6 +162,7 @@ export const useTaskStore = create((set, get) => ({
     await invoke("update_task_status", { id, status });
     await invoke("update_position", {
       tasks: flattenTasks(updatedTasks),
+      boardId: get().currentBoardId,
     });
 
     await get().loadTasks();
