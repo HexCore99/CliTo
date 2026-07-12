@@ -24,6 +24,8 @@ pub fn run() {
             projects::delete_board,
             projects::delete_project,
             tasks::get_tasks,
+            tasks::get_today_tasks,
+            tasks::get_upcoming_tasks,
             tasks::get_trash_tasks,
             tasks::create_task,
             tasks::move_to_trash,

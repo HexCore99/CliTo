@@ -18,27 +18,107 @@ pub struct Task {
     due_date: Option<String>,
     description: Option<String>,
 }
-
+// flag
 #[tauri::command] // allow this function to be called from the frontend
 pub fn get_tasks(
     app: tauri::AppHandle,
     board_id: Option<i64>,
     include_all: bool,
 ) -> Result<Vec<Task>, String> {
-    let conn = get_connection(&app)?; // why not map_err here?
+    let conn = get_connection(&app)?;
 
     let mut stmt = conn
         .prepare(
-            "SELECT id,board_id,name,status,position,priority,due_date,description
-         FROM tasks
-         WHERE in_trash = 0
-         AND (? = 1 OR board_id IS ?)
-         ORDER BY position ASC",
+            "
+            SELECT id,board_id,name,status,position,priority,due_date,description
+            FROM tasks
+            WHERE in_trash = 0
+            AND (? = 1 OR board_id IS ?)
+            ORDER BY position ASC
+            ",
         )
         .map_err(|e| e.to_string())?;
 
     let tasks = stmt
         .query_map(params![include_all, board_id], |row| {
+            Ok(Task {
+                id: row.get(0)?,
+                board_id: row.get(1)?,
+                name: row.get(2)?,
+                status: row.get(3)?,
+                position: row.get(4)?,
+                priority: row.get(5)?,
+                due_date: row.get(6)?,
+                description: row.get(7)?,
+            })
+        })
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    Ok(tasks)
+}
+
+// flag
+#[tauri::command]
+pub fn get_today_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
+    let conn = get_connection(&app).map_err(|err| err.to_string())?;
+    let now = chrono::Utc::now();
+    let today = now.date_naive();
+
+    let mut stmt = conn
+        .prepare(
+            "
+            SELECT id,board_id,name,status,position,priority,due_date,description
+            FROM tasks
+            WHERE in_trash = 0
+            AND due_date = ?
+            ORDER BY position ASC
+            ",
+        )
+        .map_err(|e| e.to_string())?;
+
+    let tasks = stmt
+        .query_map(params![today], |row| {
+            Ok(Task {
+                id: row.get(0)?,
+                board_id: row.get(1)?,
+                name: row.get(2)?,
+                status: row.get(3)?,
+                position: row.get(4)?,
+                priority: row.get(5)?,
+                due_date: row.get(6)?,
+                description: row.get(7)?,
+            })
+        })
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    Ok(tasks)
+}
+
+// flag
+#[tauri::command]
+pub fn get_upcoming_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
+    let conn = get_connection(&app).map_err(|err| err.to_string())?;
+    let now = chrono::Utc::now();
+    let today = now.date_naive();
+
+    let mut stmt = conn
+        .prepare(
+            "
+            SELECT id,board_id,name,status,position,priority,due_date,description
+            FROM tasks
+            WHERE in_trash = 0
+            AND due_date > ?
+            ORDER BY position ASC
+            ",
+        )
+        .map_err(|e| e.to_string())?;
+
+    let tasks = stmt
+        .query_map(params![today], |row| {
             Ok(Task {
                 id: row.get(0)?,
                 board_id: row.get(1)?,
@@ -131,7 +211,7 @@ pub fn create_task(
          AND in_trash = 0",
         params![board_id],
     )
-        .map_err(|e| e.to_string())?;
+    .map_err(|e| e.to_string())?;
 
     // insert with new pos
     tx.execute(
@@ -269,11 +349,8 @@ pub fn restore_from_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> 
         .map_err(|err| err.to_string())?;
     }
 
-    tx.execute(
-        "UPDATE tasks SET in_trash = 0 WHERE id = ?",
-        params![id],
-    )
-    .map_err(|err| err.to_string())?;
+    tx.execute("UPDATE tasks SET in_trash = 0 WHERE id = ?", params![id])
+        .map_err(|err| err.to_string())?;
 
     tx.commit().map_err(|err| err.to_string())?;
 

@@ -110,6 +110,39 @@ export const useTaskStore = create((set, get) => ({
     return true;
   },
 
+  getTodayTasks: async () => {
+    set({
+      currentBoardId: null,
+      currentIncludeAll: true,
+      tasks: createTaskColumns(),
+    });
+
+    const tasksFromDB = await invoke("get_today_tasks");
+
+    set({
+      tasks: groupTasksByStatus(tasksFromDB),
+    });
+
+    return true;
+  },
+
+
+  getUpcomingTasks: async () => {
+    set({
+      currentBoardId: null,
+      currentIncludeAll: true,
+      tasks: createTaskColumns(),
+    });
+
+    const tasksFromDB = await invoke("get_upcoming_tasks");
+
+    set({
+      tasks: groupTasksByStatus(tasksFromDB),
+    });
+
+    return true;
+  },
+
   createTask: async (task) => {
     const name = task.name;
     const priority = task.priority ?? 4;

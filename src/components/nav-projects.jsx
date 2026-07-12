@@ -1,8 +1,6 @@
 import { useState } from "react";
 import {
   ChevronRightIcon,
-  FolderIcon,
-  LayoutDashboardIcon,
   PlusIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -135,7 +133,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
             type: "general",
             projectId: null,
             boardId: null,
-            title: "All",
+            title: "All Tasks",
           });
         }
       } else {
@@ -148,7 +146,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
             type: "general",
             projectId: null,
             boardId: null,
-            title: "All",
+            title: "All Tasks",
           });
         }
       }
@@ -167,7 +165,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
     : pendingDelete?.board.name;
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+    <SidebarGroup className="pt-3 pb-4 group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Projects</SidebarGroupLabel>
 
       <SidebarGroupAction
@@ -216,10 +214,9 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton
                   tooltip={project.name}
-                  className="pr-14"
+                  className="h-9 pr-14"
                 >
                   <ChevronRightIcon className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  <FolderIcon />
                   <span>{project.name}</span>
                 </SidebarMenuButton>
               </CollapsibleTrigger>
@@ -247,7 +244,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
               </SidebarMenuAction>
 
               <CollapsibleContent>
-                <SidebarMenuSub>
+                <SidebarMenuSub className="mx-2 gap-1 py-1 pr-0 pl-3">
                   {project.boards.map((board) => (
                     <SidebarMenuSubItem
                       key={board.id}
@@ -264,7 +261,6 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                           handleBoardClick(event, project, board)
                         }
                       >
-                        <LayoutDashboardIcon />
                         <span>{board.name}</span>
                       </SidebarMenuSubButton>
 
