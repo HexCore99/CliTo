@@ -23,10 +23,7 @@ pub struct SortConfig{
 }
 
 fn default_ui_config() -> UiConfig {
-    let mut nav_open_items: HashMap<String, bool> = HashMap::new();
-
-    nav_open_items.insert("Tasks".to_string(), true);
-    nav_open_items.insert("Settings".to_string(), true);
+    let nav_open_items: HashMap<String, bool> = HashMap::new();
 
     UiConfig {
         sidebar: SidebarConfig {

@@ -22,7 +22,11 @@ const data = {
   ],
 };
 
-export function AppSidebar({ sidebarConfig, ...props }) {
+export function AppSidebar({
+  sidebarConfig,
+  onNavItemOpenChange,
+  ...props
+}) {
   return (
     <Sidebar
       collapsible="icon"
@@ -31,7 +35,10 @@ export function AppSidebar({ sidebarConfig, ...props }) {
     >
       <SidebarContent>
         <NavGeneral items={data.general} />
-        <NavProjects />
+        <NavProjects
+          navOpenItems={sidebarConfig?.navOpenItems}
+          onNavItemOpenChange={onNavItemOpenChange}
+        />
       </SidebarContent>
       <SidebarRail />
     </Sidebar>

@@ -54,6 +54,7 @@ function moveTaskToColumn(tasksByStatus, taskId, newStatus) {
 export const useTaskStore = create((set, get) => ({
   tasks: createTaskColumns(),
   currentBoardId: null,
+  currentIncludeAll: true,
 
   setTasks: (newTasks) => {
     //newTasks can be task array or function
@@ -78,19 +79,27 @@ export const useTaskStore = create((set, get) => ({
     }));
   },
 
-  loadTasks: async (boardId = get().currentBoardId) => {
+  loadTasks: async (
+    boardId = get().currentBoardId,
+    includeAll = get().currentIncludeAll,
+  ) => {
     const selectedBoardId = boardId ?? null;
 
     set({
       currentBoardId: selectedBoardId,
+      currentIncludeAll: includeAll,
       tasks: createTaskColumns(),
     });
 
     const tasksFromDB = await invoke("get_tasks", {
       boardId: selectedBoardId,
+      includeAll,
     });
 
-    if (get().currentBoardId !== selectedBoardId) {
+    if (
+      get().currentBoardId !== selectedBoardId ||
+      get().currentIncludeAll !== includeAll
+    ) {
       return false;
     }
 
@@ -107,6 +116,7 @@ export const useTaskStore = create((set, get) => ({
     const due_date = task.due_date ?? null;
     const description = task.description ?? null;
     const boardId = get().currentBoardId;
+    const includeAll = get().currentIncludeAll;
 
     await invoke("create_task", {
       name: name,
@@ -116,7 +126,7 @@ export const useTaskStore = create((set, get) => ({
       boardId,
     });
 
-    await get().loadTasks(boardId);
+    await get().loadTasks(boardId, includeAll);
   },
 
   move_to_trash: async (taskId) => {
@@ -163,6 +173,7 @@ export const useTaskStore = create((set, get) => ({
     await invoke("update_position", {
       tasks: flattenTasks(updatedTasks),
       boardId: get().currentBoardId,
+      includeAll: get().currentIncludeAll,
     });
 
     await get().loadTasks();

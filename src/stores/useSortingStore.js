@@ -24,9 +24,16 @@ export const useSortingStore = create((set, get) => ({
 
     // sort all columns, cz default task loads in db-order
     const boardId = useTaskStore.getState().currentBoardId;
+    const includeAll = useTaskStore.getState().currentIncludeAll;
 
     for (const [columnName, sortOption] of Object.entries(newSortOptions)) {
-      await get().sortColumn(columnName, sortOption, boardId, false);
+      await get().sortColumn(
+        columnName,
+        sortOption,
+        boardId,
+        includeAll,
+        false,
+      );
     }
   },
 
@@ -49,6 +56,7 @@ export const useSortingStore = create((set, get) => ({
     columnName,
     sortOption,
     boardId = useTaskStore.getState().currentBoardId,
+    includeAll = useTaskStore.getState().currentIncludeAll,
     persistConfig = true,
   ) => {
     set((state) => ({
@@ -62,9 +70,13 @@ export const useSortingStore = create((set, get) => ({
       columnName,
       sortOption,
       boardId,
+      includeAll,
     });
 
-    if (useTaskStore.getState().currentBoardId !== boardId) {
+    if (
+      useTaskStore.getState().currentBoardId !== boardId ||
+      useTaskStore.getState().currentIncludeAll !== includeAll
+    ) {
       return sortedTasks;
     }
 
@@ -80,11 +92,17 @@ export const useSortingStore = create((set, get) => ({
     return sortedTasks;
   },
 
-  applyCurrentSorting: async (boardId) => {
+  applyCurrentSorting: async (boardId, includeAll) => {
     const sortOptions = get().sortOptions;
 
     for (const [columnName, sortOption] of Object.entries(sortOptions)) {
-      await get().sortColumn(columnName, sortOption, boardId, false);
+      await get().sortColumn(
+        columnName,
+        sortOption,
+        boardId,
+        includeAll,
+        false,
+      );
     }
   },
 
