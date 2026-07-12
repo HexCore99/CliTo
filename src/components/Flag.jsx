@@ -10,10 +10,10 @@ import {
 import { useTaskStore } from "@/stores/useTaskStore";
 
 const priorities = [
-  { value: "1", label: "Priority 1", color: "#dc4c3e", filled: true },
-  { value: "2", label: "Priority 2", color: "#f59e0b", filled: true },
-  { value: "3", label: "Priority 3", color: "#2563eb", filled: true },
-  { value: "4", label: "Priority 4", color: "#6b7280", filled: false },
+  { value: "1", label: "Urgent", color: "#dc4c3e", filled: true },
+  { value: "2", label: "High", color: "#f59e0b", filled: true },
+  { value: "3", label: "Medium", color: "#2563eb", filled: true },
+  { value: "4", label: "Low", color: "#6b7280", filled: false },
 ];
 
 function PriorityFlag({ priority, size = 16 }) {
