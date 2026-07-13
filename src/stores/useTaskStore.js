@@ -79,6 +79,18 @@ export const useTaskStore = create((set, get) => ({
     }));
   },
 
+  applyTaskDraft: (taskId, changes) => {
+    const id = Number(taskId);
+
+    set((state) => ({
+      tasks: groupTasksByStatus(
+        flattenTasks(state.tasks).map((task) =>
+          Number(task.id) === id ? { ...task, ...changes } : task,
+        ),
+      ),
+    }));
+  },
+
   loadTasks: async (
     boardId = get().currentBoardId,
     includeAll = get().currentIncludeAll,

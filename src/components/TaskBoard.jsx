@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { DndContext, closestCorners } from "@dnd-kit/core";
 import { invoke } from "@tauri-apps/api/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
@@ -11,10 +12,13 @@ import {
   groupTasksByStatus,
   useTaskStore,
 } from "@/stores/useTaskStore";
+import { useBoardStore } from "@/stores/useBoardStore";
+import { useProjectStore } from "@/stores/useProjectStore";
+import { useSortingStore } from "@/stores/useSortingStore";
 import TaskColumn from "./TaskColumn";
 import Task from "./Task";
 import CreateTask from "./CreateTask";
-import { useSortingStore } from "@/stores/useSortingStore";
+import TaskDetailsPanel from "./task-details/TaskDetailsPanel";
 
 const columns = [
   { title: "Todo", status: "todo" },
@@ -22,20 +26,82 @@ const columns = [
   { title: "Completed", status: "completed" },
 ];
 
+function getTaskBreadcrumb(task, projects) {
+  if (task.board_id == null) return ["All Tasks"];
+
+  for (const project of projects) {
+    const board = project.boards.find(
+      (candidate) => Number(candidate.id) === Number(task.board_id),
+    );
+
+    if (board) return [project.name, board.name];
+  }
+
+  return ["All Tasks"];
+}
+
 export default function TaskBoard() {
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [boardScroll, setBoardScroll] = useState({ left: 0, max: 0 });
+  const boardScrollRef = useRef(null);
+
   const tasks = useTaskStore((state) => state.tasks);
   const currentBoardId = useTaskStore((state) => state.currentBoardId);
   const currentIncludeAll = useTaskStore((state) => state.currentIncludeAll);
-
   const setTasks = useTaskStore((state) => state.setTasks);
-
   const createTask = useTaskStore((state) => state.createTask);
+  const moveToTrash = useTaskStore((state) => state.move_to_trash);
+  const applyTaskDraft = useTaskStore((state) => state.applyTaskDraft);
 
-  const move_to_trash = useTaskStore((state) => state.move_to_trash);
+  const boardState = useBoardStore((state) => state.states);
+  const projects = useProjectStore((state) => state.projects);
+
+  const visibleTasks = flattenTasks(tasks);
+  const selectedTask = visibleTasks.find(
+    (task) => Number(task.id) === Number(selectedTaskId),
+  );
+
+  useEffect(() => {
+    setSelectedTaskId(null);
+  }, [boardState.type, boardState.boardId]);
+
+  useEffect(() => {
+    if (selectedTaskId != null && !selectedTask) {
+      setSelectedTaskId(null);
+    }
+  }, [selectedTaskId, selectedTask]);
+
+  useEffect(() => {
+    const scroller = boardScrollRef.current;
+
+    if (!scroller || selectedTaskId == null) {
+      setBoardScroll({ left: 0, max: 0 });
+      return;
+    }
+
+    function updateScrollRange() {
+      const max = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+      setBoardScroll({ left: Math.min(scroller.scrollLeft, max), max });
+    }
+
+    const frameId = requestAnimationFrame(updateScrollRange);
+    const resizeObserver = new ResizeObserver(updateScrollRange);
+    resizeObserver.observe(scroller);
+
+    if (scroller.firstElementChild) {
+      resizeObserver.observe(scroller.firstElementChild);
+    }
+
+    window.addEventListener("resize", updateScrollRange);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateScrollRange);
+    };
+  }, [selectedTaskId]);
 
   function getDropStatus(overId, taskList) {
-    //can be task or column
-
     const column = columns.find((column) => column.status === overId);
     if (column) return column.status;
 
@@ -133,43 +199,120 @@ export default function TaskBoard() {
         await sortColumn(colStat, sortOption);
       }
     }
-
-    // on changing column, i want to initiate sort for both columns. should i do it from here?
   }
 
   function getTasksForColumn(status) {
     return tasks[status] ?? [];
   }
 
+  function handleSaveDraft(taskId, changes) {
+    applyTaskDraft(taskId, changes);
+    setSelectedTaskId(null);
+  }
+
+  async function handleDeleteTask(taskId) {
+    await moveToTrash(taskId);
+    setSelectedTaskId(null);
+  }
+
+  const boardGridClassName = selectedTask
+    ? "mt-6 grid min-w-[780px] grid-cols-3 max-[1428px]:min-w-[calc(100%+416px)] max-[1428px]:pr-[416px]"
+    : "mt-6 grid grid-cols-3 max-[1050px]:grid-cols-2 max-[620px]:grid-cols-1";
+
+  const boardScrollClassName = selectedTask
+    ? "min-w-0 flex-1 overflow-x-auto max-[1428px]:h-full max-[1428px]:overflow-y-auto max-[1428px]:pb-14"
+    : "min-w-0 flex-1 overflow-x-auto";
+
+  const boardContainerClassName = selectedTask
+    ? "relative flex w-full overflow-hidden max-[1428px]:h-[calc(100vh-6.5rem)] min-[1429px]:min-h-[calc(100vh-3.5rem)]"
+    : "flex min-h-[calc(100vh-3.5rem)] w-full overflow-hidden";
+
+  function handleBoardScroll(event) {
+    const scroller = event.currentTarget;
+    setBoardScroll((currentScroll) => ({
+      ...currentScroll,
+      left: scroller.scrollLeft,
+    }));
+  }
+
+  function handleBoardSliderChange(event) {
+    const left = Number(event.target.value);
+    boardScrollRef.current?.scrollTo({ left, behavior: "auto" });
+    setBoardScroll((currentScroll) => ({ ...currentScroll, left }));
+  }
+
   return (
     <DndContext
       collisionDetection={closestCorners}
       modifiers={[restrictToWindowEdges]}
+      onDragStart={() => setSelectedTaskId(null)}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
     >
-      <div className="mt-6 grid grid-cols-3 max-[1050px]:grid-cols-2 max-[620px]:grid-cols-1">
-        {columns.map((column) => {
-          const columnTasks = getTasksForColumn(column.status);
-          return (
-            <TaskColumn
-              key={column.status}
-              title={column.title}
-              status={column.status}
-            >
-              {column.status === "todo" && <CreateTask onAdd={createTask} />}
+      <div className={boardContainerClassName}>
+        <div
+          ref={boardScrollRef}
+          className={boardScrollClassName}
+          onScroll={handleBoardScroll}
+        >
+          <div className={boardGridClassName}>
+            {columns.map((column) => {
+              const columnTasks = getTasksForColumn(column.status);
 
-              <SortableContext
-                items={columnTasks.map((task) => String(task.id))}
-                strategy={verticalListSortingStrategy}
-              >
-                {columnTasks.map((task) => (
-                  <Task key={task.id} task={task} onDelete={move_to_trash} />
-                ))}
-              </SortableContext>
-            </TaskColumn>
-          );
-        })}
+              return (
+                <TaskColumn
+                  key={column.status}
+                  title={column.title}
+                  status={column.status}
+                >
+                  {column.status === "todo" && (
+                    <CreateTask onAdd={createTask} />
+                  )}
+
+                  <SortableContext
+                    items={columnTasks.map((task) => String(task.id))}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {columnTasks.map((task) => (
+                      <Task
+                        key={task.id}
+                        task={task}
+                        isSelected={Number(selectedTaskId) === Number(task.id)}
+                        onOpenDetails={setSelectedTaskId}
+                        onDelete={handleDeleteTask}
+                      />
+                    ))}
+                  </SortableContext>
+                </TaskColumn>
+              );
+            })}
+          </div>
+        </div>
+
+        {selectedTask && boardScroll.max > 0 && (
+          <div className="absolute right-[424px] bottom-3 left-4 z-40 flex items-center rounded-full border border-slate-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur min-[1429px]:hidden">
+            <input
+              type="range"
+              min="0"
+              max={boardScroll.max}
+              step="1"
+              value={Math.min(boardScroll.left, boardScroll.max)}
+              aria-label="Scroll task columns horizontally"
+              className="h-2 w-full cursor-ew-resize accent-orange-500"
+              onChange={handleBoardSliderChange}
+            />
+          </div>
+        )}
+
+        {selectedTask && (
+          <TaskDetailsPanel
+            task={selectedTask}
+            breadcrumb={getTaskBreadcrumb(selectedTask, projects)}
+            onClose={() => setSelectedTaskId(null)}
+            onDelete={handleDeleteTask}
+            onSave={handleSaveDraft}
+          />
+        )}
       </div>
     </DndContext>
   );

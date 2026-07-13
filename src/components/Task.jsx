@@ -1,14 +1,18 @@
-import React from "react";
-import { useCallback } from "react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Check, Trash2, SquarePen, X } from "lucide-react";
-import { useSortable } from "@dnd-kit/sortable";
 import { useTaskStore } from "@/stores/useTaskStore";
+import { useTaskDrag } from "@/hooks/useTaskDrag";
 import DatePicker from "./DatePicker";
 import Flag from "./Flag";
+import TaskDragHandle from "./TaskDragHandle";
 import { useSortingStore } from "@/stores/useSortingStore";
 
-export default function Task({ task, onDelete }) {
+export default function Task({
+  task,
+  onDelete,
+  isSelected = false,
+  onOpenDetails,
+}) {
   const changeTaskStatus = useTaskStore((state) => state.changeTaskStatus);
 
   const setNewDate = useTaskStore((state) => state.set_date);
@@ -16,17 +20,14 @@ export default function Task({ task, onDelete }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.name);
 
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({
-      id: String(task.id),
-    });
-
-  const style = {
-    transform: transform
-      ? `translate3d(${transform.x}px, ${transform.y}px,0)`
-      : undefined,
-    transition,
-  };
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    isDragging,
+    style,
+  } = useTaskDrag(task.id);
 
   async function handleStatusChange(nextStatus) {
     const previousStatus = task.status;
@@ -68,7 +69,6 @@ export default function Task({ task, onDelete }) {
   const set_date = useCallback(
     async (taskId, newDate) => {
       await setNewDate(taskId, newDate);
-      // call the sorting function after updating the date
       const { sortOptions, sortColumn } = useSortingStore.getState();
       const sortOption = sortOptions[task.status];
       if (sortOption !== "default") {
@@ -78,15 +78,49 @@ export default function Task({ task, onDelete }) {
     [task.status, setNewDate],
   );
 
+  function handleCardClick(event) {
+    if (isDragging || isEditing) return;
+
+    const interactiveTarget =
+      event.target instanceof Element &&
+      event.target.closest(
+        "button, input, textarea, select, a, [role='menuitem'], [role='option']",
+      );
+
+    if (interactiveTarget) return;
+
+    onOpenDetails?.(task.id);
+  }
+
+  function handleCardKeyDown(event) {
+    if (event.target !== event.currentTarget) return;
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onOpenDetails?.(task.id);
+    }
+  }
+
+  const cardClassName = [
+    taskColor[task.status ?? "todo"],
+    "h-fit w-full cursor-pointer rounded-lg px-3 py-3 shadow-sm transition-shadow hover:shadow-lg",
+    isSelected ? "ring-2 ring-orange-400 ring-offset-2" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`${taskColor[task.status ?? "todo"]}  shadow-sm h-fit w-full px-3 py-3 rounded-lg hover:shadow-lg cursor-grab active:cursor-grabbing`}
+      role="button"
+      tabIndex={0}
+      aria-selected={isSelected}
+      className={cardClassName}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
     >
-      <div className={`flex items-center justify-between gap-3 `}>
+      <div className="flex items-center justify-between gap-3">
         <input
           type="checkbox"
           checked={task.status === "completed"}
@@ -116,21 +150,23 @@ export default function Task({ task, onDelete }) {
             }}
           />
         ) : (
-          <p className="min-w-0 flex-1 break-words ">{task.name}</p>
+          <p className="min-w-0 flex-1 break-words">{task.name}</p>
         )}
 
-        {isEditing ? (
+        {/* {isEditing ? (
           <>
             <button
+              type="button"
               className="shrink-0 p-2 hover:text-green-600"
-              onPointerDown={(e) => e.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
               onClick={saveEditing}
             >
               <Check size={20} />
             </button>
             <button
+              type="button"
               className="shrink-0 p-2 hover:text-red-500"
-              onPointerDown={(e) => e.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
               onClick={cancelEditing}
             >
               <X size={20} />
@@ -138,8 +174,9 @@ export default function Task({ task, onDelete }) {
           </>
         ) : (
           <button
-            className="shrink-0 p-2  hover:text-blue-500"
-            onPointerDown={(e) => e.stopPropagation()}
+            type="button"
+            className="shrink-0 p-2 hover:text-blue-500"
+            onPointerDown={(event) => event.stopPropagation()}
             onClick={startEditing}
           >
             <SquarePen
@@ -147,14 +184,22 @@ export default function Task({ task, onDelete }) {
               size={20}
             />
           </button>
-        )}
-        <button
-          className="shrink-0 p-2  hover:text-blue-500"
-          onPointerDown={(e) => e.stopPropagation()}
+        )}*/}
+        {/* <button
+          type="button"
+          className="shrink-0 p-2 hover:text-blue-500"
+          onPointerDown={(event) => event.stopPropagation()}
           onClick={() => onDelete(task.id)}
         >
           <Trash2 size={20} strokeWidth={1.25} />
-        </button>
+        </button>*/}
+
+
+        <TaskDragHandle
+          attributes={attributes}
+          listeners={listeners}
+          setActivatorNodeRef={setActivatorNodeRef}
+        />
       </div>
       <div className="mt-2 flex items-center gap-1">
         <DatePicker taskId={task.id} onChange={set_date} />

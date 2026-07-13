@@ -177,7 +177,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
         <PlusIcon />
       </SidebarGroupAction>
 
-      <SidebarMenu>
+      <SidebarMenu className="gap-2">
         {isCreatingProject && (
           <SidebarMenuItem className="mb-2">
             <form onSubmit={handleCreateProject}>
@@ -214,7 +214,11 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton
                   tooltip={project.name}
-                  className="h-9 pr-14"
+                  isActive={
+                    boardState.type === "board" &&
+                    boardState.projectId === project.id
+                  }
+                  className="h-9 pr-14 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600!"
                 >
                   <ChevronRightIcon className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
                   <span>{project.name}</span>
@@ -252,7 +256,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                     >
                       <SidebarMenuSubButton
                         href="#"
-                        className="pr-7"
+                        className="pr-7 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600!"
                         isActive={
                           boardState.type === "board" &&
                           boardState.boardId === board.id

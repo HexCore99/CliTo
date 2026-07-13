@@ -27,13 +27,23 @@ function PriorityFlag({ priority, size = 16 }) {
   );
 }
 
-const Flag = memo(function Flag({ taskId, taskPriority }) {
+const Flag = memo(function Flag({
+  taskId,
+  taskPriority,
+  onChange,
+  showLabel = false,
+}) {
   const setPriorityInStore = useTaskStore((state) => state.set_priority);
   const selectedPriority = String(taskPriority ?? 4);
   const priority =
     priorities.find((item) => item.value === selectedPriority) ?? priorities[3];
 
   function setPriority(p) {
+    if (onChange) {
+      onChange(Number(p));
+      return;
+    }
+
     setPriorityInStore(taskId, p);
   }
   return (
@@ -44,9 +54,13 @@ const Flag = memo(function Flag({ taskId, taskPriority }) {
           title={priority.label}
           aria-label={`Set priority. Current: ${priority.label}`}
           onPointerDown={(event) => event.stopPropagation()}
-          className="inline-flex size-7 items-center justify-center rounded transition-colors hover:bg-black/5"
+          className={
+            "inline-flex h-7 items-center justify-center gap-2 rounded px-1.5 transition-colors hover:bg-black/5 " +
+            (showLabel ? "text-sm text-slate-700" : "w-7")
+          }
         >
           <PriorityFlag priority={priority} />
+          {showLabel && <span>{priority.label}</span>}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
