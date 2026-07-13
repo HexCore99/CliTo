@@ -12,17 +12,22 @@ import { Popover } from "radix-ui";
 import Tooltip from "./Tooltip";
 import { flattenTasks, useTaskStore } from "@/stores/useTaskStore";
 
-const DatePicker = memo(function DatePicker({ taskId, onChange }) {
+const DatePicker = memo(function DatePicker({
+  taskId,
+  dueDate: dueDateProp,
+  onChange,
+}) {
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
   const [open, setOpen] = useState(false);
 
-  const dueDate = useTaskStore(
+  const storedDueDate = useTaskStore(
     (state) =>
       flattenTasks(state.tasks).find(
         (task) => Number(task.id) === Number(taskId),
       )?.due_date ?? null,
   );
+  const dueDate = dueDateProp !== undefined ? dueDateProp : storedDueDate;
 
   const selectedDate = dueDate ? new Date(`${dueDate}T00:00:00`) : null;
 

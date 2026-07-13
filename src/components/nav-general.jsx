@@ -1,21 +1,20 @@
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useBoardStore } from "@/stores/useBoardStore";
 
-export function NavGeneral({ items }) {
+export function NavGeneral({ items, className }) {
   const setBoardState = useBoardStore((state) => state.set_state);
   const boardState = useBoardStore((state) => state.states);
 
-  function handleOnClick(event, item) {
-    event.preventDefault();
+  function handleOnClick(item) {
+    if (item.disabled || !item.type) return;
 
     setBoardState({
-      type: item.title === "Trash" ? "trash" : "general",
+      type: item.type,
       projectId: null,
       boardId: null,
       title: item.title,
@@ -23,30 +22,28 @@ export function NavGeneral({ items }) {
   }
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>General</SidebarGroupLabel>
-      <SidebarMenu>
-        
-        <div className="space-y-2 flex-col ">
-          {items.map((item) => (
+    <SidebarGroup className={className}>
+      <SidebarMenu className="gap-1">
+        {items.map((item) => {
+          const isActive = item.type && boardState.type === item.type;
+
+          return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
-                asChild
+                type="button"
                 tooltip={item.title}
-                className={`cursor-pointer transition-colors hover:bg-slate-300!
-                  ${boardState.title === item.title ? "bg-sky-500!" : ""}`}
+                isActive={Boolean(isActive)}
+                disabled={item.disabled}
+                title={item.disabled ? `${item.title} is coming soon` : undefined}
+                className="h-10 cursor-pointer px-3 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600! disabled:cursor-not-allowed"
+                onClick={() => handleOnClick(item)}
               >
-                <a
-                  href={item.url}
-                  onClick={(event) => handleOnClick(event, item)}
-                >
-                  {item.icon}
-                  <span>{item.title}</span>
-                </a>
+                {item.icon}
+                <span>{item.title}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ))}
-        </div>
+          );
+        })}
       </SidebarMenu>
     </SidebarGroup>
   );

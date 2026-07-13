@@ -10,10 +10,10 @@ import {
 import { useTaskStore } from "@/stores/useTaskStore";
 
 const priorities = [
-  { value: "1", label: "Priority 1", color: "#dc4c3e", filled: true },
-  { value: "2", label: "Priority 2", color: "#f59e0b", filled: true },
-  { value: "3", label: "Priority 3", color: "#2563eb", filled: true },
-  { value: "4", label: "Priority 4", color: "#6b7280", filled: false },
+  { value: "1", label: "Urgent", color: "#dc4c3e", filled: true },
+  { value: "2", label: "High", color: "#f59e0b", filled: true },
+  { value: "3", label: "Medium", color: "#2563eb", filled: true },
+  { value: "4", label: "Low", color: "#6b7280", filled: false },
 ];
 
 function PriorityFlag({ priority, size = 16 }) {
@@ -27,13 +27,23 @@ function PriorityFlag({ priority, size = 16 }) {
   );
 }
 
-const Flag = memo(function Flag({ taskId, taskPriority }) {
-  const setPriorityInStore = useTaskStore((state) => state.set_priority);
+const Flag = memo(function Flag({
+  taskId,
+  taskPriority,
+  onChange,
+  showLabel = false,
+}) {
+  const setPriorityInStore = useTaskStore((state) => state.setPriority);
   const selectedPriority = String(taskPriority ?? 4);
   const priority =
     priorities.find((item) => item.value === selectedPriority) ?? priorities[3];
 
   function setPriority(p) {
+    if (onChange) {
+      onChange(Number(p));
+      return;
+    }
+
     setPriorityInStore(taskId, p);
   }
   return (
@@ -44,9 +54,13 @@ const Flag = memo(function Flag({ taskId, taskPriority }) {
           title={priority.label}
           aria-label={`Set priority. Current: ${priority.label}`}
           onPointerDown={(event) => event.stopPropagation()}
-          className="inline-flex size-7 items-center justify-center rounded transition-colors hover:bg-black/5"
+          className={
+            "inline-flex h-7 items-center justify-center gap-2 rounded px-1.5 transition-colors hover:bg-black/5 " +
+            (showLabel ? "text-sm text-slate-700" : "w-7")
+          }
         >
           <PriorityFlag priority={priority} />
+          {showLabel && <span>{priority.label}</span>}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

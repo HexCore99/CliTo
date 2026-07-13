@@ -86,6 +86,29 @@ pub fn get_connection(app: &tauri::AppHandle) -> Result<Connection, String> {
     .map_err(|err| err.to_string())?;
 
     /*
+     * CREATE TABLE NOTES if not exists
+     */
+
+    // flag
+    conn.execute(
+        "
+        CREATE TABLE IF NOT EXISTS notes(
+        id INTEGER PRIMARY KEY,
+        task_id INTEGER NOT NULL,
+        is_completed INTEGER DEFAULT 0,
+        description TEXT NOT NULL,
+        creation_date DATE,
+        modified_date DATE,
+
+        FOREIGN KEY(task_id)
+        REFERENCES tasks(id)
+        )
+        ",
+        [],
+    )
+    .map_err(|err| err.to_string())?;
+
+    /*
      * CREATE TABLE IF NOT EXISTS does not add new columns to an
      * existing tasks table, so migrate older databases manually.
      */

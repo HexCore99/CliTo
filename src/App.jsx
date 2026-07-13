@@ -19,6 +19,8 @@ export default function App() {
   const [uiConfig, setUiConfig] = useState(null);
 
   const loadTasks = useTaskStore((state) => state.loadTasks);
+  const getTodayTasks = useTaskStore((state) => state.getTodayTasks);
+  const getUpcomingTasks = useTaskStore((state) => state.getUpcomingTasks);
   const boardState = useBoardStore((state) => state.states);
   const loadProjects = useProjectStore((state) => state.loadProjects);
 
@@ -48,6 +50,16 @@ export default function App() {
   useEffect(() => {
     if (boardState.type === "trash") return;
 
+    if (boardState.type === "today") {
+      getTodayTasks();
+      return;
+    }
+
+    if (boardState.type === "upcoming") {
+      getUpcomingTasks();
+      return;
+    }
+
     const boardId = boardState.type === "board" ? boardState.boardId : null;
     const includeAll = boardState.type === "general";
 
@@ -64,6 +76,8 @@ export default function App() {
     boardState.type,
     boardState.boardId,
     loadTasks,
+    getTodayTasks,
+    getUpcomingTasks,
     applyCurrentSorting,
   ]);
 

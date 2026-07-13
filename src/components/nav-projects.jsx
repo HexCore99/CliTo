@@ -1,8 +1,6 @@
 import { useState } from "react";
 import {
   ChevronRightIcon,
-  FolderIcon,
-  LayoutDashboardIcon,
   PlusIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -135,7 +133,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
             type: "general",
             projectId: null,
             boardId: null,
-            title: "All",
+            title: "All Tasks",
           });
         }
       } else {
@@ -148,7 +146,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
             type: "general",
             projectId: null,
             boardId: null,
-            title: "All",
+            title: "All Tasks",
           });
         }
       }
@@ -167,7 +165,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
     : pendingDelete?.board.name;
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+    <SidebarGroup className="pt-3 pb-4 group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Projects</SidebarGroupLabel>
 
       <SidebarGroupAction
@@ -179,7 +177,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
         <PlusIcon />
       </SidebarGroupAction>
 
-      <SidebarMenu>
+      <SidebarMenu className="gap-2">
         {isCreatingProject && (
           <SidebarMenuItem className="mb-2">
             <form onSubmit={handleCreateProject}>
@@ -216,10 +214,13 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton
                   tooltip={project.name}
-                  className="pr-14"
+                  isActive={
+                    boardState.type === "board" &&
+                    boardState.projectId === project.id
+                  }
+                  className="h-9 pr-14 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600!"
                 >
                   <ChevronRightIcon className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  <FolderIcon />
                   <span>{project.name}</span>
                 </SidebarMenuButton>
               </CollapsibleTrigger>
@@ -247,7 +248,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
               </SidebarMenuAction>
 
               <CollapsibleContent>
-                <SidebarMenuSub>
+                <SidebarMenuSub className="mx-2 gap-1 py-1 pr-0 pl-3">
                   {project.boards.map((board) => (
                     <SidebarMenuSubItem
                       key={board.id}
@@ -255,7 +256,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                     >
                       <SidebarMenuSubButton
                         href="#"
-                        className="pr-7"
+                        className="pr-7 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600!"
                         isActive={
                           boardState.type === "board" &&
                           boardState.boardId === board.id
@@ -264,7 +265,6 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                           handleBoardClick(event, project, board)
                         }
                       >
-                        <LayoutDashboardIcon />
                         <span>{board.name}</span>
                       </SidebarMenuSubButton>
 

@@ -12,7 +12,7 @@ CliTo is a lightweight desktop app for planning personal work without handing yo
 
 - **Project-based organization** - group work into projects, then create focused boards inside each project.
 - **Flexible Kanban board** - move tasks between Todo, In Progress, and Completed; reorder tasks exactly where you want them.
-- **Task details at a glance** - add descriptions, choose from four priority levels, and set due dates with quick Today and Tomorrow actions or a calendar.
+- **Task details at a glance** - add descriptions, assign Priority 1 (Urgent), Priority 2 (High), Priority 3 (Medium), or Priority 4 (Low), and set due dates with quick Today and Tomorrow actions or a calendar.
 - **Saved sorting preferences** - sort each board column independently and retain your preferred view between sessions.
 - **Safe deletion** - deleted tasks, boards, and projects are moved to Trash first. Restore items when needed or permanently remove them later.
 - **Local persistence** - tasks, projects, boards, ordering, and interface preferences are stored locally with SQLite and YAML.

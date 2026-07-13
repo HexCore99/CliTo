@@ -24,6 +24,8 @@ pub fn run() {
             projects::delete_board,
             projects::delete_project,
             tasks::get_tasks,
+            tasks::get_today_tasks,
+            tasks::get_upcoming_tasks,
             tasks::get_trash_tasks,
             tasks::create_task,
             tasks::move_to_trash,
@@ -35,8 +37,11 @@ pub fn run() {
             tasks::set_due_date,
             tasks::set_priority,
             tasks::set_description,
-            tasks::update_task_desc,
+            tasks::update_task_name,
             tasks::sort_tasks,
+            tasks::create_note,
+            tasks::update_note,
+            tasks::delete_note,
             ui_config::get_ui_config,
             ui_config::save_ui_config
         ])
