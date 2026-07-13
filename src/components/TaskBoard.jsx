@@ -216,8 +216,8 @@ export default function TaskBoard() {
   }
 
   const boardGridClassName = selectedTask
-    ? "mt-6 grid min-w-[780px] grid-cols-3 max-[1428px]:min-w-[calc(100%+416px)] max-[1428px]:pr-[416px]"
-    : "mt-6 grid grid-cols-3 max-[1050px]:grid-cols-2 max-[620px]:grid-cols-1";
+    ? "mt-6 grid w-full min-w-[1050px] grid-cols-[repeat(3,minmax(350px,1fr))] max-[1428px]:min-w-[calc(100%+416px)] max-[1428px]:pr-[416px]"
+    : "mt-6 grid w-full min-w-[1050px] grid-cols-[repeat(3,minmax(350px,1fr))]";
 
   const boardScrollClassName = selectedTask
     ? "min-w-0 flex-1 overflow-x-auto max-[1428px]:h-full max-[1428px]:overflow-y-auto max-[1428px]:pb-14"
@@ -289,7 +289,7 @@ export default function TaskBoard() {
           </div>
         </div>
 
-        {selectedTask && boardScroll.max > 0 && (
+        {/* {selectedTask && boardScroll.max > 0 && (
           <div className="absolute right-[424px] bottom-3 left-4 z-40 flex items-center rounded-full border border-slate-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur min-[1429px]:hidden">
             <input
               type="range"
@@ -302,7 +302,7 @@ export default function TaskBoard() {
               onChange={handleBoardSliderChange}
             />
           </div>
-        )}
+        )}*/}
 
         {selectedTask && (
           <TaskDetailsPanel

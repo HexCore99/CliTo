@@ -103,7 +103,7 @@ export default function Task({
 
   const cardClassName = [
     taskColor[task.status ?? "todo"],
-    "h-fit w-full cursor-pointer rounded-lg px-3 py-3 shadow-sm transition-shadow hover:shadow-lg",
+    "h-fit w-full min-w-[300px] cursor-pointer rounded-lg px-3 py-3 shadow-sm transition-shadow hover:shadow-lg",
     isSelected ? "ring-2 ring-orange-400 ring-offset-2" : "",
   ]
     .filter(Boolean)
