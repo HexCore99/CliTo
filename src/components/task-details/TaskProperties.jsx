@@ -1,5 +1,5 @@
 import DatePicker from "@/components/DatePicker";
-import Flag from "@/components/Flag";
+import FlagPicker from "@/components/FlagPicker";
 
 const STATUS_OPTIONS = [
   { value: "todo", label: "Todo" },
@@ -47,7 +47,7 @@ export default function TaskProperties({ taskId, draft, onChange }) {
       </PropertyRow>
 
       <PropertyRow label="Priority">
-        <Flag
+        <FlagPicker
           taskId={taskId}
           taskPriority={draft.priority}
           showLabel

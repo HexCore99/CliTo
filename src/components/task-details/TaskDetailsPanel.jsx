@@ -4,6 +4,8 @@ import TaskDetailsActions from "./TaskDetailsActions";
 import TaskDetailsHeader from "./TaskDetailsHeader";
 import TaskNotes from "./TaskNotes";
 import TaskProperties from "./TaskProperties";
+import { useTaskStore } from "@/stores/useTaskStore";
+import { useSortingStore } from "@/stores/useSortingStore";
 
 function createDraft(task) {
   return {
@@ -13,7 +15,11 @@ function createDraft(task) {
     priority: Number(task.priority ?? 4),
     description: task.description ?? "",
     notes: Array.isArray(task.notes)
-      ? task.notes.map((note) => ({ ...note }))
+      ? task.notes.map((note) => ({
+          ...note,
+          text: note.text ?? note.description ?? "",
+          completed: Boolean(note.completed ?? note.is_completed),
+        }))
       : [],
   };
 }
@@ -22,15 +28,20 @@ export default function TaskDetailsPanel({
   task,
   breadcrumb,
   onClose,
-  onDelete,
-  onSave,
 }) {
   const [draft, setDraft] = useState(() => createDraft(task));
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const saveTaskDetails = useTaskStore((state) => state.saveTaskDetails);
+  const moveToTrash = useTaskStore((state) => state.moveToTrash);
+  const sortOptions = useSortingStore((state) => state.sortOptions);
+  const sortColumn = useSortingStore((state) => state.sortColumn);
 
   useEffect(() => {
     setDraft(createDraft(task));
     setIsDeleting(false);
+    setIsSaving(false);
   }, [task.id]);
 
   useEffect(() => {
@@ -49,24 +60,50 @@ export default function TaskDetailsPanel({
     }));
   }
 
-  function handleSave() {
+  async function handleSave() {
     const name = draft.name.trim();
     if (!name) return;
 
-    onSave(task.id, {
+    const changes = {
       ...draft,
       name,
+      description: draft.description.trim() || null,
       notes: draft.notes
-        .map((note) => ({ ...note, text: note.text.trim() }))
+        .map((note) => ({ ...note, text: (note.text ?? "").trim() }))
         .filter((note) => note.text),
-    });
+    };
+
+    setIsSaving(true);
+
+    try {
+      await saveTaskDetails(task, changes);
+
+      const affectedColumns = new Set([task.status, changes.status]);
+
+      for (const columnStatus of affectedColumns) {
+        const sortOption = sortOptions[columnStatus];
+
+        if (sortOption && sortOption !== "default") {
+          await sortColumn(columnStatus, sortOption);
+        }
+      }
+
+      onClose();
+    } catch (error) {
+      console.error("Could not save task details:", error);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleDelete() {
     setIsDeleting(true);
 
     try {
-      await onDelete(task.id);
+      await moveToTrash(task.id);
+      onClose();
+    } catch (error) {
+      console.error("Could not move task to Trash:", error);
     } finally {
       setIsDeleting(false);
     }
@@ -77,7 +114,7 @@ export default function TaskDetailsPanel({
       role="dialog"
       aria-modal="true"
       aria-label={"Task details for " + task.name}
-      className="fixed right-2 top-16 bottom-2 z-50 flex w-[400px] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl min-[1429px]:static min-[1429px]:z-auto min-[1429px]:h-[calc(100vh-3.5rem)] min-[1429px]:max-w-[42vw] min-[1429px]:shrink-0 min-[1429px]:rounded-none min-[1429px]:border-y-0 min-[1429px]:border-r-0 min-[1429px]:shadow-none"
+      className="fixed right-2 top-16 bottom-2 z-50 flex w-100 max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl min-[1429px]:static min-[1429px]:z-auto min-[1429px]:h-[calc(100vh-3.5rem)] min-[1429px]:max-w-[42vw] min-[1429px]:shrink-0 min-[1429px]:rounded-none min-[1429px]:border-y-0 min-[1429px]:border-r-0 min-[1429px]:shadow-none"
     >
       <TaskDetailsHeader
         name={draft.name}
@@ -108,6 +145,7 @@ export default function TaskDetailsPanel({
 
         <TaskDetailsActions
           isDeleting={isDeleting}
+          isSaving={isSaving}
           saveDisabled={!draft.name.trim()}
           onDelete={handleDelete}
           onCancel={onClose}

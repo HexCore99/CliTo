@@ -1,4 +1,4 @@
-use rusqlite::{params, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -6,6 +6,18 @@ use std::collections::HashMap;
 use crate::db::get_connection;
 
 //pass extra info to compiler.
+#[derive(Serialize, Deserialize)] //Tell the compiler that, task can be converted to JSON.
+pub struct Note {
+    id: i64,
+    task_id: i64,
+    #[serde(rename = "completed")]
+    is_completed: bool,
+    #[serde(rename = "text")]
+    description: String,
+    creation_date: String,
+    modified_date: String,
+}
+
 #[derive(Serialize, Deserialize)] //Tell the compiler that, task can be converted to JSON.
 pub struct Task {
     id: i64,
@@ -17,7 +29,51 @@ pub struct Task {
     priority: i32,
     due_date: Option<String>,
     description: Option<String>,
+    #[serde(default)]
+    notes: Vec<Note>,
 }
+
+fn get_task_with_note_handler(
+    mut tasks: Vec<Task>,
+    conn: &Connection,
+) -> Result<Vec<Task>, String> {
+    let mut note_stmt = conn
+        .prepare(
+            "
+            SELECT
+            id,
+            task_id,
+            is_completed,
+            description,
+            creation_date,
+            modified_date
+            FROM notes
+            WHERE task_id = ?
+            ORDER BY creation_date ASC
+            ",
+        )
+        .map_err(|err| err.to_string())?;
+
+    for task in &mut tasks {
+        task.notes = note_stmt
+            .query_map(params![task.id], |row| {
+                Ok(Note {
+                    id: row.get(0)?,
+                    task_id: row.get(1)?,
+                    is_completed: row.get(2)?,
+                    description: row.get(3)?,
+                    creation_date: row.get(4)?,
+                    modified_date: row.get(5)?,
+                })
+            })
+            .map_err(|err| err.to_string())?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|err| err.to_string())?;
+    }
+
+    Ok(tasks)
+}
+
 // flag
 #[tauri::command] // allow this function to be called from the frontend
 pub fn get_tasks(
@@ -25,9 +81,10 @@ pub fn get_tasks(
     board_id: Option<i64>,
     include_all: bool,
 ) -> Result<Vec<Task>, String> {
-    let conn = get_connection(&app)?;
+    let mut conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    let mut stmt = conn
+    let mut stmt = tx
         .prepare(
             "
             SELECT id,board_id,name,status,position,priority,due_date,description
@@ -50,11 +107,16 @@ pub fn get_tasks(
                 priority: row.get(5)?,
                 due_date: row.get(6)?,
                 description: row.get(7)?,
+                notes: Vec::new(),
             })
         })
         .map_err(|e| e.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
+
+    drop(stmt);
+    let tasks = get_task_with_note_handler(tasks, &tx)?;
+    tx.commit().map_err(|err| err.to_string())?;
 
     Ok(tasks)
 }
@@ -62,11 +124,13 @@ pub fn get_tasks(
 // flag
 #[tauri::command]
 pub fn get_today_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
-    let conn = get_connection(&app).map_err(|err| err.to_string())?;
+    let mut conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|err| err.to_string())?;
+
     let now = chrono::Utc::now();
     let today = now.date_naive();
 
-    let mut stmt = conn
+    let mut stmt = tx
         .prepare(
             "
             SELECT id,board_id,name,status,position,priority,due_date,description
@@ -89,23 +153,29 @@ pub fn get_today_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
                 priority: row.get(5)?,
                 due_date: row.get(6)?,
                 description: row.get(7)?,
+                notes: Vec::new(),
             })
         })
         .map_err(|e| e.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
 
+    drop(stmt);
+    let tasks = get_task_with_note_handler(tasks, &tx)?;
+    tx.commit().map_err(|err| err.to_string())?;
+
     Ok(tasks)
 }
 
-// flag
 #[tauri::command]
 pub fn get_upcoming_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
-    let conn = get_connection(&app).map_err(|err| err.to_string())?;
-    let now = chrono::Utc::now();
-    let today = now.date_naive();
+    let mut conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    let mut stmt = conn
+    let now = chrono::Utc::now();
+    let today = now.naive_utc();
+
+    let mut stmt = tx
         .prepare(
             "
             SELECT id,board_id,name,status,position,priority,due_date,description
@@ -128,19 +198,26 @@ pub fn get_upcoming_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
                 priority: row.get(5)?,
                 due_date: row.get(6)?,
                 description: row.get(7)?,
+                notes: Vec::new(),
             })
         })
         .map_err(|e| e.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
 
+    drop(stmt);
+    let tasks = get_task_with_note_handler(tasks, &tx)?;
+    tx.commit().map_err(|err| err.to_string())?;
+
     Ok(tasks)
 }
 
 #[tauri::command]
 pub fn get_trash_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
-    let conn = get_connection(&app).map_err(|err| err.to_string())?;
-    let mut stmt = conn
+    let mut conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|err| err.to_string())?;
+
+    let mut stmt = tx
         .prepare(
             "SELECT id,board_id,name,status,position,priority,due_date,description
           FROM tasks
@@ -159,11 +236,16 @@ pub fn get_trash_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
                 priority: row.get(5)?,
                 due_date: row.get(6)?,
                 description: row.get(7)?,
+                notes: Vec::new(),
             })
         })
         .map_err(|err| err.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|err| err.to_string())?;
+
+    drop(stmt);
+    let tasks = get_task_with_note_handler(tasks, &tx)?;
+    tx.commit().map_err(|err| err.to_string())?;
     Ok(tasks)
 }
 
@@ -270,6 +352,7 @@ pub fn update_position(
 #[tauri::command]
 pub fn update_task_status(app: tauri::AppHandle, id: i64, status: String) -> Result<(), String> {
     let conn = get_connection(&app)?;
+
     let sql = "UPDATE tasks
                 SET status = ?
                 WHERE id = ?";
@@ -280,7 +363,7 @@ pub fn update_task_status(app: tauri::AppHandle, id: i64, status: String) -> Res
 }
 
 #[tauri::command]
-pub fn update_task_desc(
+pub fn update_task_name(
     app: tauri::AppHandle,
     id: i64,
     updated_task: String,
@@ -472,6 +555,7 @@ pub fn set_description(
     Ok(())
 }
 
+// flag
 #[tauri::command]
 pub fn sort_tasks(
     app: tauri::AppHandle,
@@ -484,7 +568,8 @@ pub fn sort_tasks(
         return Err(format!("Invalid column name: {}", column_name));
     };
 
-    let conn = get_connection(&app).map_err(|err| err.to_string())?;
+    let mut conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|err| err.to_string())?;
 
     let order_by_clause = match sort_option.as_str() {
         "default" => "position ASC",
@@ -505,7 +590,7 @@ pub fn sort_tasks(
         order_by_clause
     );
 
-    let mut stmt = conn.prepare(&query).map_err(|err| err.to_string())?;
+    let mut stmt = tx.prepare(&query).map_err(|err| err.to_string())?;
 
     let tasks = stmt
         .query_map(params![column_name, include_all, board_id], |row| {
@@ -518,11 +603,104 @@ pub fn sort_tasks(
                 priority: row.get(5)?,
                 due_date: row.get(6)?,
                 description: row.get(7)?,
+                notes: Vec::new(),
             })
         })
         .map_err(|err| err.to_string())?
         .collect::<Result<Vec<Task>, _>>()
         .map_err(|err| err.to_string())?;
 
+    drop(stmt);
+    let tasks = get_task_with_note_handler(tasks, &tx)?;
+    tx.commit().map_err(|err| err.to_string())?;
+
     Ok(tasks)
+}
+
+#[tauri::command]
+pub fn create_note(
+    app: tauri::AppHandle,
+    task_id: i64,
+    is_completed: bool,
+    description: String,
+) -> Result<Note, String> {
+    if description.trim().is_empty() {
+        return Err("note can't be empty".to_string());
+    }
+
+    let conn = get_connection(&app).map_err(|err| err.to_string())?;
+    let today = chrono::Local::now().format("%H:%M:%S").to_string();
+
+    conn.execute(
+        "
+        INSERT INTO notes(task_id,is_completed,description,creation_date,modified_date)
+        VALUES(?,?,?,?,?)
+        ",
+        params![task_id, is_completed, description, today, today],
+    )
+    .map_err(|err| err.to_string())?;
+    let id = conn.last_insert_rowid();
+
+    Ok(Note {
+        id,
+        task_id,
+        is_completed,
+        description,
+        creation_date: today.clone(),
+        modified_date: today,
+    })
+}
+
+#[tauri::command]
+pub fn update_note(
+    app: tauri::AppHandle,
+    note_id: i64,
+    task_id: i64,
+    description: String,
+    is_completed: bool,
+) -> Result<(), String> {
+    if description.trim().is_empty() {
+        return Err("note can't be empty".to_string());
+    }
+
+    let conn = get_connection(&app).map_err(|err| err.to_string())?;
+    let today = chrono::Local::now().format("%H:%M:%S").to_string();
+
+    let updated_rows = conn
+        .execute(
+            "
+        UPDATE notes
+        SET description = ?, is_completed = ?, modified_date = ?
+        WHERE id = ? AND task_id = ?
+        ",
+            params![description, is_completed, today, note_id, task_id],
+        )
+        .map_err(|err| err.to_string())?;
+
+    if updated_rows == 0 {
+        return Err("note not found".to_string());
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_note(app: tauri::AppHandle, note_id: i64, task_id: i64) -> Result<(), String> {
+    let conn = get_connection(&app).map_err(|err| err.to_string())?;
+
+    let deleted_rows = conn
+        .execute(
+            "
+        DELETE FROM notes
+        WHERE id = ? AND task_id = ?
+        ",
+            params![note_id, task_id],
+        )
+        .map_err(|err| err.to_string())?;
+
+    if deleted_rows == 0 {
+        return Err("note not found".to_string());
+    }
+
+    Ok(())
 }

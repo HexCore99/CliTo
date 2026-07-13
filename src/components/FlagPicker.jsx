@@ -33,7 +33,7 @@ const Flag = memo(function Flag({
   onChange,
   showLabel = false,
 }) {
-  const setPriorityInStore = useTaskStore((state) => state.set_priority);
+  const setPriorityInStore = useTaskStore((state) => state.setPriority);
   const selectedPriority = String(taskPriority ?? 4);
   const priority =
     priorities.find((item) => item.value === selectedPriority) ?? priorities[3];

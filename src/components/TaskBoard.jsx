@@ -50,8 +50,7 @@ export default function TaskBoard() {
   const currentIncludeAll = useTaskStore((state) => state.currentIncludeAll);
   const setTasks = useTaskStore((state) => state.setTasks);
   const createTask = useTaskStore((state) => state.createTask);
-  const moveToTrash = useTaskStore((state) => state.move_to_trash);
-  const applyTaskDraft = useTaskStore((state) => state.applyTaskDraft);
+  const moveToTrash = useTaskStore((state) => state.moveToTrash);
 
   const boardState = useBoardStore((state) => state.states);
   const projects = useProjectStore((state) => state.projects);
@@ -71,35 +70,6 @@ export default function TaskBoard() {
     }
   }, [selectedTaskId, selectedTask]);
 
-  useEffect(() => {
-    const scroller = boardScrollRef.current;
-
-    if (!scroller || selectedTaskId == null) {
-      setBoardScroll({ left: 0, max: 0 });
-      return;
-    }
-
-    function updateScrollRange() {
-      const max = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
-      setBoardScroll({ left: Math.min(scroller.scrollLeft, max), max });
-    }
-
-    const frameId = requestAnimationFrame(updateScrollRange);
-    const resizeObserver = new ResizeObserver(updateScrollRange);
-    resizeObserver.observe(scroller);
-
-    if (scroller.firstElementChild) {
-      resizeObserver.observe(scroller.firstElementChild);
-    }
-
-    window.addEventListener("resize", updateScrollRange);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", updateScrollRange);
-    };
-  }, [selectedTaskId]);
 
   function getDropStatus(overId, taskList) {
     const column = columns.find((column) => column.status === overId);
@@ -205,10 +175,6 @@ export default function TaskBoard() {
     return tasks[status] ?? [];
   }
 
-  function handleSaveDraft(taskId, changes) {
-    applyTaskDraft(taskId, changes);
-    setSelectedTaskId(null);
-  }
 
   async function handleDeleteTask(taskId) {
     await moveToTrash(taskId);
@@ -235,11 +201,6 @@ export default function TaskBoard() {
     }));
   }
 
-  function handleBoardSliderChange(event) {
-    const left = Number(event.target.value);
-    boardScrollRef.current?.scrollTo({ left, behavior: "auto" });
-    setBoardScroll((currentScroll) => ({ ...currentScroll, left }));
-  }
 
   return (
     <DndContext
@@ -289,28 +250,11 @@ export default function TaskBoard() {
           </div>
         </div>
 
-        {/* {selectedTask && boardScroll.max > 0 && (
-          <div className="absolute right-[424px] bottom-3 left-4 z-40 flex items-center rounded-full border border-slate-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur min-[1429px]:hidden">
-            <input
-              type="range"
-              min="0"
-              max={boardScroll.max}
-              step="1"
-              value={Math.min(boardScroll.left, boardScroll.max)}
-              aria-label="Scroll task columns horizontally"
-              className="h-2 w-full cursor-ew-resize accent-orange-500"
-              onChange={handleBoardSliderChange}
-            />
-          </div>
-        )}*/}
-
         {selectedTask && (
           <TaskDetailsPanel
             task={selectedTask}
             breadcrumb={getTaskBreadcrumb(selectedTask, projects)}
             onClose={() => setSelectedTaskId(null)}
-            onDelete={handleDeleteTask}
-            onSave={handleSaveDraft}
           />
         )}
       </div>

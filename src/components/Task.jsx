@@ -3,7 +3,7 @@ import { Check, Trash2, SquarePen, X } from "lucide-react";
 import { useTaskStore } from "@/stores/useTaskStore";
 import { useTaskDrag } from "@/hooks/useTaskDrag";
 import DatePicker from "./DatePicker";
-import Flag from "./Flag";
+import FlagPicker from "./FlagPicker";
 import TaskDragHandle from "./TaskDragHandle";
 import { useSortingStore } from "@/stores/useSortingStore";
 
@@ -15,7 +15,7 @@ export default function Task({
 }) {
   const changeTaskStatus = useTaskStore((state) => state.changeTaskStatus);
 
-  const setNewDate = useTaskStore((state) => state.set_date);
+  const setNewDate = useTaskStore((state) => state.setDate);
   const updateTaskName = useTaskStore((state) => state.updateTaskName);
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.name);
@@ -66,7 +66,7 @@ export default function Task({
     setIsEditing(false);
   }
 
-  const set_date = useCallback(
+  const setDate = useCallback(
     async (taskId, newDate) => {
       await setNewDate(taskId, newDate);
       const { sortOptions, sortColumn } = useSortingStore.getState();
@@ -202,8 +202,8 @@ export default function Task({
         />
       </div>
       <div className="mt-2 flex items-center gap-1">
-        <DatePicker taskId={task.id} onChange={set_date} />
-        <Flag taskId={task.id} taskPriority={task.priority} />
+        <DatePicker taskId={task.id} onChange={setDate} />
+        <FlagPicker taskId={task.id} taskPriority={task.priority} />
       </div>
     </div>
   );
