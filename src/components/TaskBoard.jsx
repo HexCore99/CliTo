@@ -44,6 +44,7 @@ export default function TaskBoard() {
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [boardScroll, setBoardScroll] = useState({ left: 0, max: 0 });
   const boardScrollRef = useRef(null);
+  const boardGridRef = useRef(null);
 
   const tasks = useTaskStore((state) => state.tasks);
   const currentBoardId = useTaskStore((state) => state.currentBoardId);
@@ -201,11 +202,25 @@ export default function TaskBoard() {
     }));
   }
 
+  function restrictToBoardColumns({ transform, draggingNodeRect }) {
+    const boardRect = boardGridRef.current?.getBoundingClientRect();
+
+    if (!boardRect || !draggingNodeRect) return transform;
+
+    return {
+      ...transform,
+      x: Math.min(
+        Math.max(transform.x, boardRect.left - draggingNodeRect.left),
+        boardRect.right - draggingNodeRect.right,
+      ),
+    };
+  }
+
 
   return (
     <DndContext
       collisionDetection={closestCorners}
-      modifiers={[restrictToWindowEdges]}
+      modifiers={[restrictToWindowEdges, restrictToBoardColumns]}
       onDragStart={() => setSelectedTaskId(null)}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
@@ -216,7 +231,7 @@ export default function TaskBoard() {
           className={boardScrollClassName}
           onScroll={handleBoardScroll}
         >
-          <div className={boardGridClassName}>
+          <div ref={boardGridRef} className={boardGridClassName}>
             {columns.map((column) => {
               const columnTasks = getTasksForColumn(column.status);
 
