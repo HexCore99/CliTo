@@ -253,11 +253,31 @@ pub fn get_trash_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
 pub fn create_task(
     app: tauri::AppHandle,
     name: String,
+    status: String,
     priority: i32,
     due_date: Option<String>,
     description: Option<String>,
     board_id: Option<i64>,
 ) -> Result<(), String> {
+    let name = name.trim();
+
+    if name.is_empty() {
+        return Err("Task name cannot be empty".to_string());
+    }
+
+    if !matches!(status.as_str(), "todo" | "in-progress" | "completed") {
+        return Err("Invalid task status".to_string());
+    }
+
+    if !(1..=4).contains(&priority) {
+        return Err("Priority must be between 1 and 4".to_string());
+    }
+
+    let description = description.and_then(|value| {
+        let trimmed = value.trim();
+        (!trimmed.is_empty()).then(|| trimmed.to_string())
+    });
+
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
@@ -284,23 +304,32 @@ pub fn create_task(
         }
     }
 
-    // Only shift Todo tasks that belong to the selected board.
+    // Make room at the top of the destination column.
     tx.execute(
         "UPDATE tasks
          SET position = position + 1
          WHERE board_id IS ?
-         AND status = 'todo'
+         AND status = ?
          AND in_trash = 0",
-        params![board_id],
+        params![board_id, status],
     )
     .map_err(|e| e.to_string())?;
 
     // insert with new pos
     tx.execute(
         "INSERT INTO tasks
-                 (id,board_id,name,position,priority,due_date,description)
-                 VALUES(?,?,?,?,?,?,?)",
-        params![id, board_id, name, 0, priority, due_date, description],
+                 (id,board_id,name,status,position,priority,due_date,description)
+                 VALUES(?,?,?,?,?,?,?,?)",
+        params![
+            id,
+            board_id,
+            name,
+            status,
+            0,
+            priority,
+            due_date,
+            description
+        ],
     )
     .map_err(|err| err.to_string())?;
 

@@ -55,6 +55,7 @@ export const useTaskStore = create((set, get) => ({
   tasks: createTaskColumns(),
   currentBoardId: null,
   currentIncludeAll: true,
+  currentTaskView: "board",
 
   setTasks: (newTasks) => {
     //newTasks can be task array or function
@@ -220,6 +221,7 @@ export const useTaskStore = create((set, get) => ({
     set({
       currentBoardId: selectedBoardId,
       currentIncludeAll: includeAll,
+      currentTaskView: "board",
       tasks: createTaskColumns(),
     });
 
@@ -229,6 +231,7 @@ export const useTaskStore = create((set, get) => ({
     });
 
     if (
+      get().currentTaskView !== "board" ||
       get().currentBoardId !== selectedBoardId ||
       get().currentIncludeAll !== includeAll
     ) {
@@ -246,10 +249,15 @@ export const useTaskStore = create((set, get) => ({
     set({
       currentBoardId: null,
       currentIncludeAll: true,
+      currentTaskView: "today",
       tasks: createTaskColumns(),
     });
 
     const tasksFromDB = await invoke("get_today_tasks");
+
+    if (get().currentTaskView !== "today") {
+      return false;
+    }
 
     set({
       tasks: groupTasksByStatus(tasksFromDB),
@@ -263,10 +271,15 @@ export const useTaskStore = create((set, get) => ({
     set({
       currentBoardId: null,
       currentIncludeAll: true,
+      currentTaskView: "upcoming",
       tasks: createTaskColumns(),
     });
 
     const tasksFromDB = await invoke("get_upcoming_tasks");
+
+    if (get().currentTaskView !== "upcoming") {
+      return false;
+    }
 
     set({
       tasks: groupTasksByStatus(tasksFromDB),
@@ -277,21 +290,30 @@ export const useTaskStore = create((set, get) => ({
 
   createTask: async (task) => {
     const name = task.name;
+    const status = task.status ?? "todo";
     const priority = task.priority ?? 4;
     const due_date = task.due_date ?? null;
     const description = task.description ?? null;
     const boardId = get().currentBoardId;
-    const includeAll = get().currentIncludeAll;
 
     await invoke("create_task", {
-      name: name,
-      priority: priority,
+      name,
+      status,
+      priority,
       dueDate: due_date,
-      description: description,
+      description,
       boardId,
     });
 
-    await get().loadTasks(boardId, includeAll);
+    const activeView = get().currentTaskView;
+
+    if (activeView === "today") {
+      await get().getTodayTasks();
+    } else if (activeView === "upcoming") {
+      await get().getUpcomingTasks();
+    } else {
+      await get().loadTasks(get().currentBoardId, get().currentIncludeAll);
+    }
   },
 
   moveToTrash: async (taskId) => {

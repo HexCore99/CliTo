@@ -242,7 +242,7 @@ export default function TaskBoard() {
                   title={column.title}
                   status={column.status}
                 >
-                    <CreateTask onAdd={createTask} />
+                    <CreateTask colStatus={column.status} onAdd={createTask} />
 
                   {columnTasks.length === 0 && (
                     <EmptyColumnText status={column.status}/>
