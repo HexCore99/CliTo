@@ -19,6 +19,7 @@ import TaskColumn from "./TaskColumn";
 import Task from "./Task";
 import CreateTask from "./CreateTask";
 import TaskDetailsPanel from "./task-details/TaskDetailsPanel";
+import EmptyColumnText from "./EmptyColumnText";
 
 const columns = [
   { title: "Todo", status: "todo" },
@@ -241,9 +242,11 @@ export default function TaskBoard() {
                   title={column.title}
                   status={column.status}
                 >
-                  {column.status === "todo" && (
-                    <CreateTask onAdd={createTask} />
-                  )}
+                    <CreateTask colStatus={column.status} onAdd={createTask} />
+
+                  {columnTasks.length === 0 && (
+                    <EmptyColumnText status={column.status}/>
+                    )}
 
                   <SortableContext
                     items={columnTasks.map((task) => String(task.id))}

@@ -210,7 +210,7 @@ export default function Task({
 }
 
 const taskColor = {
-  todo: "bg-orange-100 border-orange-300",
-  "in-progress": "bg-blue-100 border-blue-300",
-  completed: "bg-green-100 border-green-300",
+  todo: "bg-orange-300 border-orange-300",
+  "in-progress": "bg-blue-300 border-blue-300",
+  completed: "bg-green-300 border-green-300",
 };
