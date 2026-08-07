@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Circle, Plus } from "lucide-react";
 import DatePicker from "./DatePicker";
 import FlagPicker from "./FlagPicker";
-import { Button } from "./ui/Button";
+import { Button } from "./ui/button";
 import Hr from "./ui/Hr";
 
 const initialTask = {
