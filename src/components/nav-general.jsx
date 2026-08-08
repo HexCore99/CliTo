@@ -35,7 +35,7 @@ export function NavGeneral({ items, className }) {
                 isActive={Boolean(isActive)}
                 disabled={item.disabled}
                 title={item.disabled ? `${item.title} is coming soon` : undefined}
-                className="h-10 cursor-pointer px-3 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600! disabled:cursor-not-allowed"
+                className="h-10 cursor-pointer px-3 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600! dark:data-[active=true]:bg-orange-950/40! dark:data-[active=true]:text-orange-300! dark:data-[active=true]:hover:bg-orange-950/40! dark:data-[active=true]:hover:text-orange-300! disabled:cursor-not-allowed"
                 onClick={() => handleOnClick(item)}
               >
                 {item.icon}

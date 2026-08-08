@@ -41,8 +41,8 @@ const data = {
   utility: [
     {
       title: "Settings",
+      type: "settings",
       icon: <SettingsIcon />,
-      disabled: true,
     },
     {
       title: "Trash",

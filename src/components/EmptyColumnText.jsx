@@ -26,16 +26,16 @@ export default function EmptyColumnText({ status }) {
   const Icon = content.icon;
 
   return (
-    <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 px-6 text-center">
+    <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 text-center">
       <Icon
-        className="mb-4 size-10 text-gray-400"
+        className="mb-4 size-10 text-muted-foreground"
         strokeWidth={1.5}
         aria-hidden="true"
       />
 
-      <h4 className="font-semibold text-gray-700">{content.title}</h4>
+      <h4 className="font-semibold text-foreground">{content.title}</h4>
 
-      <p className="mt-2 text-sm text-gray-500">{content.description}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{content.description}</p>
     </div>
   );
 }

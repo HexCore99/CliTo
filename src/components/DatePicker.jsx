@@ -50,7 +50,7 @@ const DatePicker = memo(function DatePicker({
     ? "text-green-600"
     : isTomorrowSelected
       ? "text-yellow-600"
-      : "text-slate-600";
+      : "text-foreground";
   const selectedIconColor =
     isTodaySelected || isTomorrowSelected ? selectedLabelColor : "text-red-500";
 
@@ -109,7 +109,7 @@ const DatePicker = memo(function DatePicker({
             title="Set due date"
             aria-label={`Set due date. Current: ${label}`}
             onPointerDown={(event) => event.stopPropagation()}
-            className="inline-flex h-7 items-center gap-1.5 rounded px-1.5 text-xs transition-colors hover:bg-black/5"
+            className="inline-flex h-7 items-center gap-1.5 rounded px-1.5 text-xs transition-colors hover:bg-muted"
           >
             <CalendarFold
               size={15}
@@ -125,13 +125,13 @@ const DatePicker = memo(function DatePicker({
             align="start"
             sideOffset={5}
             onPointerDown={(event) => event.stopPropagation()}
-            className="z-50 w-64 rounded-lg bg-white p-1.5 text-slate-800 shadow-lg ring-1 ring-black/10"
+            className="z-50 w-64 rounded-lg bg-popover p-1.5 text-popover-foreground shadow-lg ring-1 ring-border"
           >
             <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => selectDate(today)}
-                className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-slate-100 ${
+                className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-muted ${
                   isTodaySelected ? "bg-green-50 text-green-700" : ""
                 }`}
               >
@@ -141,7 +141,7 @@ const DatePicker = memo(function DatePicker({
                   className="text-green-600"
                 />
                 <span>Today</span>
-                <span className="ml-auto text-xs text-slate-500">
+                <span className="ml-auto text-xs text-muted-foreground">
                   {today.toLocaleDateString("en-US", { weekday: "short" })}
                 </span>
               </button>
@@ -149,35 +149,35 @@ const DatePicker = memo(function DatePicker({
               <button
                 type="button"
                 onClick={() => selectDate(tomorrow)}
-                className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-slate-100 ${
+                className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-muted ${
                   isTomorrowSelected ? "bg-yellow-50 text-yellow-700" : ""
                 }`}
               >
                 <Sun size={18} strokeWidth={1.75} className="text-yellow-500" />
                 <span>Tomorrow</span>
-                <span className="ml-auto text-xs text-slate-500">
+                <span className="ml-auto text-xs text-muted-foreground">
                   {tomorrow.toLocaleDateString("en-US", { weekday: "short" })}
                 </span>
               </button>
             </div>
 
-            <div className="my-1 h-px bg-slate-200" />
+            <div className="my-1 h-px bg-border" />
 
             {/* No Date */}
             <button
               type="button"
               onClick={clearDate}
-              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-slate-100"
+              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-muted"
             >
               <CircleOff
                 size={18}
                 strokeWidth={1.5}
-                className="text-slate-500"
+                className="text-muted-foreground"
               />
               <span>No Date</span>
             </button>
 
-            <div className="my-1 h-px bg-slate-200" />
+            <div className="my-1 h-px bg-border" />
 
             {/* Calendar :) */}
             <div className="px-1 pb-1">
@@ -194,7 +194,7 @@ const DatePicker = memo(function DatePicker({
                     type="button"
                     aria-label="Previous month"
                     onClick={() => changeMonth(-1)}
-                    className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
                     <ChevronLeft size={15} />
                   </button>
@@ -202,7 +202,7 @@ const DatePicker = memo(function DatePicker({
                     type="button"
                     aria-label="Show current month"
                     onClick={showCurrentMonth}
-                    className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                    className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
                     <Circle size={8} />
                   </button>
@@ -210,7 +210,7 @@ const DatePicker = memo(function DatePicker({
                     type="button"
                     aria-label="Next month"
                     onClick={() => changeMonth(1)}
-                    className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
                     <ChevronRight size={15} />
                   </button>
@@ -222,7 +222,7 @@ const DatePicker = memo(function DatePicker({
                 {weekDays.map((day, index) => (
                   <span
                     key={`${day}-${index}`}
-                    className="flex h-7 items-center justify-center text-[11px] text-slate-500"
+                    className="flex h-7 items-center justify-center text-[11px] text-muted-foreground"
                   >
                     {day}
                   </span>
@@ -239,7 +239,7 @@ const DatePicker = memo(function DatePicker({
                   const selectedDateColor = isToday
                     ? "bg-green-500 font-semibold text-white hover:bg-green-600"
                     : isTomorrow
-                      ? "bg-yellow-400 font-semibold text-slate-900 hover:bg-yellow-500"
+                      ? "bg-yellow-400 font-semibold text-black hover:bg-yellow-500"
                       : "bg-red-500 font-semibold text-white hover:bg-red-600";
 
                   const dateButton = (
@@ -259,13 +259,13 @@ const DatePicker = memo(function DatePicker({
                       onClick={() => selectDate(date)}
                       className={`flex size-8 items-center justify-center justify-self-center rounded-full text-xs transition-colors ${
                         isPast
-                          ? "cursor-not-allowed text-slate-300 hover:bg-red-50"
+                          ? "cursor-not-allowed text-muted-foreground/50 hover:bg-destructive/10"
                           : isSelected
                             ? selectedDateColor
                             : isCurrentMonth
-                              ? "text-slate-700 hover:bg-slate-100"
-                              : "text-slate-300 hover:bg-slate-100"
-                      } ${isToday && !isSelected ? "font-bold text-slate-950" : ""}`}
+                              ? "text-foreground hover:bg-muted"
+                              : "text-muted-foreground/50 hover:bg-muted"
+                      } ${isToday && !isSelected ? "font-bold text-foreground" : ""}`}
                     >
                       {date.getDate()}
                     </button>

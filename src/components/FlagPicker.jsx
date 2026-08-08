@@ -55,8 +55,8 @@ const Flag = memo(function Flag({
           aria-label={`Set priority. Current: ${priority.label}`}
           onPointerDown={(event) => event.stopPropagation()}
           className={
-            "inline-flex h-7 items-center justify-center gap-2 rounded px-1.5 transition-colors hover:bg-black/5 " +
-            (showLabel ? "text-sm text-slate-700" : "w-7")
+            "inline-flex h-7 items-center justify-center gap-2 rounded px-1.5 transition-colors hover:bg-muted " +
+            (showLabel ? "text-sm text-foreground" : "w-7")
           }
         >
           <PriorityFlag priority={priority} />
@@ -66,7 +66,7 @@ const Flag = memo(function Flag({
       <DropdownMenuContent
         align="start"
         onPointerDown={(event) => event.stopPropagation()}
-        className="w-36 min-w-36 bg-white p-1"
+        className="w-36 min-w-36 bg-popover p-1"
       >
         <DropdownMenuRadioGroup
           value={selectedPriority}

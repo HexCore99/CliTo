@@ -41,7 +41,7 @@ function getTaskBreadcrumb(task, projects) {
   return ["All Tasks"];
 }
 
-export default function TaskBoard() {
+export default function TaskBoard({ defaultTaskPriority = 4 }) {
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [boardScroll, setBoardScroll] = useState({ left: 0, max: 0 });
   const boardScrollRef = useRef(null);
@@ -242,7 +242,11 @@ export default function TaskBoard() {
                   title={column.title}
                   status={column.status}
                 >
-                    <CreateTask colStatus={column.status} onAdd={createTask} />
+                    <CreateTask
+                      colStatus={column.status}
+                      defaultPriority={defaultTaskPriority}
+                      onAdd={createTask}
+                    />
 
                   {columnTasks.length === 0 && (
                     <EmptyColumnText status={column.status}/>

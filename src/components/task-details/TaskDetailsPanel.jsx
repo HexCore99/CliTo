@@ -114,7 +114,7 @@ export default function TaskDetailsPanel({
       role="dialog"
       aria-modal="true"
       aria-label={"Task details for " + task.name}
-      className="fixed right-2 top-16 bottom-2 z-50 flex w-100 max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl min-[1429px]:static min-[1429px]:z-auto min-[1429px]:h-[calc(100vh-3.5rem)] min-[1429px]:max-w-[42vw] min-[1429px]:shrink-0 min-[1429px]:rounded-none min-[1429px]:border-y-0 min-[1429px]:border-r-0 min-[1429px]:shadow-none"
+      className="fixed right-2 top-16 bottom-2 z-50 flex w-100 max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl min-[1429px]:static min-[1429px]:z-auto min-[1429px]:h-[calc(100vh-3.5rem)] min-[1429px]:max-w-[42vw] min-[1429px]:shrink-0 min-[1429px]:rounded-none min-[1429px]:border-y-0 min-[1429px]:border-r-0 min-[1429px]:shadow-none"
     >
       <TaskDetailsHeader
         name={draft.name}

@@ -5,22 +5,28 @@ import FlagPicker from "./FlagPicker";
 import { Button } from "./ui/button";
 import Hr from "./ui/Hr";
 
-const initialTask = {
-  name: "",
-  priority: 4,
-  dueDate: null,
-  description: "",
-};
-
-const addTaskColor = {
-  todo: "text-orange-600",
-  "in-progress": "text-blue-600",
-  completed:"text-green-600",
+function createInitialTask(defaultPriority) {
+  return {
+    name: "",
+    priority: defaultPriority,
+    dueDate: null,
+    description: "",
+  };
 }
 
-export default function CreateTask({ colStatus = "todo", onAdd }) {
+const addTaskColor = {
+  todo: "text-orange-600 dark:text-orange-400",
+  "in-progress": "text-blue-600 dark:text-blue-400",
+  completed:"text-green-600 dark:text-green-400",
+}
+
+export default function CreateTask({
+  colStatus = "todo",
+  defaultPriority = 4,
+  onAdd,
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [task, setTask] = useState(initialTask);
+  const [task, setTask] = useState(() => createInitialTask(defaultPriority));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function updateTask(field, value) {
@@ -28,7 +34,7 @@ export default function CreateTask({ colStatus = "todo", onAdd }) {
   }
 
   function collapse() {
-    setTask(initialTask);
+    setTask(createInitialTask(defaultPriority));
     setIsExpanded(false);
   }
 
@@ -59,6 +65,10 @@ export default function CreateTask({ colStatus = "todo", onAdd }) {
   const formRef = useRef(null);
 
   useEffect(() => {
+    if (!isExpanded) {
+      setTask(createInitialTask(defaultPriority));
+    }
+
     if (!isExpanded) return;
 
     function handleOutsideClick(event) {
@@ -92,7 +102,7 @@ export default function CreateTask({ colStatus = "todo", onAdd }) {
       document.removeEventListener("pointerdown", handleOutsideClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isExpanded]);
+  }, [defaultPriority, isExpanded]);
 
   if (!isExpanded) {
     return (
@@ -100,10 +110,10 @@ export default function CreateTask({ colStatus = "todo", onAdd }) {
         type="button"
         variant="outline"
         onClick={() => setIsExpanded(true)}
-        className={`h-10 w-full justify-center border-[#E5E7EB] bg-[#F8FAFC] text-[#64748B] hover:border-[#FDBA74] hover:bg-[#FFF7ED] hover:text-[#1F2937] ${addTaskColor[colStatus]}`}
+          className={`h-10 w-full justify-center border-border bg-muted/40 hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 ${addTaskColor[colStatus]}`}
       >
         <Plus
-          className={`size-4 text-${addTaskColor[colStatus]}`}
+          className={`size-4 ${addTaskColor[colStatus]}`}
           strokeWidth={1.75}
           aria-hidden="true"
         />
@@ -117,13 +127,13 @@ export default function CreateTask({ colStatus = "todo", onAdd }) {
     <form
       ref={formRef}
       onSubmit={handleAdd}
-      className="rounded-lg border border-slate-300 bg-white p-3 shadow-sm"
+      className="rounded-lg border border-border bg-card p-3 shadow-sm"
     >
       <div className="flex items-start gap-2">
         <Circle
           size={15}
           strokeWidth={1.75}
-          className="mt-1 shrink-0 text-slate-400"
+          className="mt-1 shrink-0 text-muted-foreground"
           aria-hidden="true"
         />
         <input
@@ -133,20 +143,20 @@ export default function CreateTask({ colStatus = "todo", onAdd }) {
           placeholder="What needs to be done?"
           aria-label="Task name"
           autoFocus
-          className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-slate-500"
+          className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground"
         />
       </div>
-      <Hr size="full" className="my-2 border-slate-200" />
+      <Hr size="full" className="my-2" />
       <textarea
         value={task.description}
         onChange={(event) => updateTask("description", event.target.value)}
         placeholder="Add description..."
         aria-label="Task description"
         rows={2}
-        className="mt-3 w-full resize-none bg-transparent text-sm leading-5 outline-none placeholder:text-slate-400"
+        className="mt-3 w-full resize-none bg-transparent text-sm leading-5 outline-none placeholder:text-muted-foreground"
       />
 
-      <Hr size="full" className="my-2 border-slate-200" />
+      <Hr size="full" className="my-2" />
 
       <div >
         <div className="flex flex-wrap justify-center  items-center gap-1">
@@ -166,7 +176,7 @@ export default function CreateTask({ colStatus = "todo", onAdd }) {
             type="button"
             variant="ghost"
             onClick={collapse}
-            className={`bg-slate-100`}
+            className="bg-muted hover:bg-muted/70"
           >
             Cancel
           </Button>
@@ -174,7 +184,7 @@ export default function CreateTask({ colStatus = "todo", onAdd }) {
             type="submit"
             variant="ghost"
             disabled={!task.name.trim() || isSubmitting}
-            className={`bg-slate-100 hover:${addTaskColor[colStatus]} ${addTaskColor[colStatus]}`}
+            className={`bg-muted hover:bg-muted/70 ${addTaskColor[colStatus]}`}
           >
             <Plus size={15} strokeWidth={1.75} aria-hidden="true" />
             {isSubmitting ? "Adding..." : "Add Task"}

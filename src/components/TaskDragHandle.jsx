@@ -11,7 +11,7 @@ export default function TaskDragHandle({
       type="button"
       title="Drag task"
       aria-label="Drag task"
-      className="flex size-7 shrink-0 touch-none cursor-grab items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-black/5 hover:text-slate-700 active:cursor-grabbing"
+      className="flex size-7 shrink-0 touch-none cursor-grab items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:cursor-grabbing"
       {...attributes}
       {...listeners}
       onClick={(event) => event.stopPropagation()}
