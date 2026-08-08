@@ -78,14 +78,14 @@ export default function Settings({ config, onConfigChange }) {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Personalize how CliTo looks and how new tasks start.
+          Personalize how Taskora looks and how new tasks start.
         </p>
       </div>
 
       <div className="space-y-5">
         <SettingCard
           title="Appearance"
-          description="Choose the color theme used throughout CliTo."
+          description="Choose the color theme used throughout Taskora."
         >
           <div className="grid gap-3 sm:grid-cols-3">
             {THEME_OPTIONS.map(({ value, label, description, icon: Icon }) => {

@@ -21,9 +21,6 @@ export default function TrashHeader({
               <h1 className="text-2xl font-semibold tracking-tight">Trash</h1>
               <span className="text-sm text-muted-foreground">{itemLabel}</span>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Items are permanently deleted after 30 days.
-            </p>
           </div>
         </div>
       </div>

@@ -74,6 +74,7 @@ pub fn get_connection(app: &tauri::AppHandle) -> Result<Connection, String> {
             due_date    DATE,
             priority    INTEGER NOT NULL DEFAULT 4,
             description TEXT,
+            creation_date TEXT NOT NULL,
             in_trash    INTEGER NOT NULL DEFAULT 0,
 
             FOREIGN KEY (board_id)
@@ -135,6 +136,34 @@ pub fn get_connection(app: &tauri::AppHandle) -> Result<Connection, String> {
             ON DELETE RESTRICT
             ",
             [],
+        )
+        .map_err(|err| err.to_string())?;
+    }
+
+    let creation_date_exists: bool = conn
+        .query_row(
+            "
+            SELECT EXISTS (
+                SELECT 1
+                FROM pragma_table_info('tasks')
+                WHERE name = 'creation_date'
+            )
+            ",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|err| err.to_string())?;
+
+    if !creation_date_exists {
+        conn.execute("ALTER TABLE tasks ADD COLUMN creation_date TEXT", [])
+            .map_err(|err| err.to_string())?;
+
+        // SQLite cannot recover historical creation times, so preserve old
+        // tasks with the timestamp at which this migration first runs.
+        let migration_date = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE tasks SET creation_date = ? WHERE creation_date IS NULL",
+            [migration_date],
         )
         .map_err(|err| err.to_string())?;
     }

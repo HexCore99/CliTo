@@ -53,8 +53,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tauriScript: bun tauri
-          tagName: clito-v__VERSION__
-          releaseName: "CliTo v__VERSION__"
+          tagName: taskora-v__VERSION__
+          releaseName: "Taskora v__VERSION__"
           releaseBody: "See the assets below to download CliTo."
           releaseDraft: true
           prerelease: false
