@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    tutorial_1_lib::run()
+    taskora_lib::run()
 }

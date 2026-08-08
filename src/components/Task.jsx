@@ -102,9 +102,11 @@ export default function Task({
   }
 
   const cardClassName = [
-    taskColor[task.status ?? "todo"],
-    "h-fit w-full min-w-[300px] cursor-pointer rounded-lg px-3 py-3 shadow-sm transition-shadow hover:shadow-lg",
-    isSelected ? "ring-2 ring-orange-400 ring-offset-2" : "",
+    taskColor[task.status] ?? taskColor.todo,
+    "task-card h-fit w-full min-w-[300px] cursor-pointer rounded-lg border px-3 py-3 shadow-sm transition-shadow hover:shadow-lg",
+    isSelected
+      ? "ring-2 ring-[var(--task-card-accent)] ring-offset-2 ring-offset-background"
+      : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -124,6 +126,7 @@ export default function Task({
         <input
           type="checkbox"
           checked={task.status === "completed"}
+          className="accent-[var(--task-card-accent)]"
           onPointerDown={(event) => event.stopPropagation()}
           onChange={(event) => {
             const nextStatus = event.target.checked ? "completed" : "todo";
@@ -132,7 +135,7 @@ export default function Task({
         />
         {isEditing ? (
           <input
-            className="min-w-0 flex-1 rounded border border-orange-300 bg-white px-2 py-1 text-sm outline-none"
+            className="min-w-0 flex-1 rounded border border-[var(--task-card-accent)] bg-background px-2 py-1 text-sm outline-none"
             value={draftName}
             autoFocus
             onPointerDown={(event) => event.stopPropagation()}
@@ -210,7 +213,7 @@ export default function Task({
 }
 
 const taskColor = {
-  todo: "bg-orange-300 border-orange-300",
-  "in-progress": "bg-blue-300 border-blue-300",
-  completed: "bg-green-300 border-green-300",
+  todo: "task-card--todo",
+  "in-progress": "task-card--progress",
+  completed: "task-card--completed",
 };

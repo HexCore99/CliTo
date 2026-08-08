@@ -47,7 +47,7 @@ export default function Sorting({ columnName }) {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-48 bg-white">
+      <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>Sort tasks</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={selectedValue}

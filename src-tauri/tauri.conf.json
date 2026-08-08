@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "CliTo",
-  "version": "0.8.0",
-  "identifier": "com.hexcr.clito",
+  "productName": "taskora",
+  "version": "1.0.0",
+  "identifier": "com.hexcr.taskora",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "CliTo",
+        "title": "Taskora",
         "width": 1200,
         "height": 800
       }

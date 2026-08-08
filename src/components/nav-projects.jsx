@@ -218,7 +218,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                     boardState.type === "board" &&
                     boardState.projectId === project.id
                   }
-                  className="h-9 pr-14 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600!"
+                  className="h-9 pr-14 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600! dark:data-[active=true]:bg-orange-950/40! dark:data-[active=true]:text-orange-300! dark:data-[active=true]:hover:bg-orange-950/40! dark:data-[active=true]:hover:text-orange-300!"
                 >
                   <ChevronRightIcon className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
                   <span>{project.name}</span>
@@ -256,7 +256,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                     >
                       <SidebarMenuSubButton
                         href="#"
-                        className="pr-7 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600!"
+                        className="pr-7 data-[active=true]:bg-orange-50! data-[active=true]:text-orange-600! data-[active=true]:hover:bg-orange-50! data-[active=true]:hover:text-orange-600! dark:data-[active=true]:bg-orange-950/40! dark:data-[active=true]:text-orange-300! dark:data-[active=true]:hover:bg-orange-950/40! dark:data-[active=true]:hover:text-orange-300!"
                         isActive={
                           boardState.type === "board" &&
                           boardState.boardId === board.id

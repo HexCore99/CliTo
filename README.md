@@ -1,123 +1,137 @@
-# CliTo
+<p align="center">
+  <img src="docs/assets/taskora-wordmark.png" width="320" alt="Taskora logo" />
+</p>
 
-> A local-first desktop task manager for turning everyday work into a calm, focused Kanban workflow.
+<h1 align="center">Taskora</h1>
 
-[![Release](https://img.shields.io/github/v/release/HexCore99/CliTo?display_name=tag&sort=semver)](https://github.com/HexCore99/CliTo/releases)
-[![CI](https://img.shields.io/github/actions/workflow/status/HexCore99/CliTo/rust.yml?label=CI)](https://github.com/HexCore99/CliTo/actions/workflows/rust.yml)
-[![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri%202-24C8DB)](https://v2.tauri.app/)
+<p align="center">
+  A local-first desktop Kanban app for planning personal work with focus.
+</p>
 
-CliTo is a lightweight desktop app for planning personal work without handing your task data to a third-party service. Create projects and boards, organize tasks visually, and keep the details that matter - priority, due date, description, and progress - stored locally on your device.
+<p align="center">
+  <a href="https://github.com/HexCore99/taskora/releases">Download</a>
+  ·
+  <a href="#run-from-source">Run from source</a>
+  ·
+  <a href="#features">Features</a>
+</p>
 
-## Highlights
+![Taskora board overview](docs/screenshots/board-overview.png)
 
-- **Project-based organization** - group work into projects, then create focused boards inside each project.
-- **Flexible Kanban board** - move tasks between Todo, In Progress, and Completed; reorder tasks exactly where you want them.
-- **Task details at a glance** - add descriptions, assign Priority 1 (Urgent), Priority 2 (High), Priority 3 (Medium), or Priority 4 (Low), and set due dates with quick Today and Tomorrow actions or a calendar.
-- **Saved sorting preferences** - sort each board column independently and retain your preferred view between sessions.
-- **Safe deletion** - deleted tasks, boards, and projects are moved to Trash first. Restore items when needed or permanently remove them later.
-- **Local persistence** - tasks, projects, boards, ordering, and interface preferences are stored locally with SQLite and YAML.
-- **Thoughtful desktop experience** - a responsive sidebar remembers its collapsed state and expanded project sections.
+## Why Taskora?
 
-## Tech Stack
+Taskora keeps your work organized without requiring an account or sending your data to a third-party service. Create projects and boards, move tasks through a clear Kanban workflow, and keep task details, notes, and preferences on your own device.
 
-| Layer | Technology |
-| --- | --- |
-| Desktop runtime | [Tauri 2](https://v2.tauri.app/) and Rust |
-| User interface | React 19 and Vite |
-| State management | Zustand |
-| Storage | SQLite via Rusqlite |
-| Drag and drop | dnd-kit |
-| UI styling | Tailwind CSS, Radix UI, and shadcn-style components |
-| Package manager | Bun |
+## Features
+
+- **Projects and boards** — Group related work into projects, then create focused boards inside them.
+- **Kanban workflow** — Manage tasks across **Todo**, **In Progress**, and **Completed**. Drag tasks to move or reorder them; new tasks start at the top of their column.
+- **Focused task details** — Edit a task's title, status, description, due date, priority, and notes from the details panel.
+- **Priorities and due dates** — Choose Priority 1–4, set a date from the calendar, or use quick Today, Tomorrow, and No date actions.
+- **Flexible views and sorting** — Switch between All Tasks, Today, and Upcoming. Sort each column by its manual order, priority, or due date.
+- **Personal settings** — Choose Light, Dark, or System theme; use a standard or floating sidebar; and set the default priority for new tasks.
+- **Trash before deletion** — Deleted tasks go to Trash, where they can be restored, permanently deleted, or cleared in one action.
+- **Local persistence** — Tasks and boards are stored in SQLite, while your sidebar, sorting, theme, and task-default preferences are stored locally in YAML.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%">
+      <strong>Task details</strong><br /><br />
+      <img src="docs/screenshots/task-details.png" alt="Task details panel" />
+    </td>
+    <td width="50%">
+      <strong>Settings</strong><br /><br />
+      <img src="docs/screenshots/settings.png" alt="Taskora settings page" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <strong>Trash</strong><br /><br />
+      <img src="docs/screenshots/trash.png" alt="Taskora Trash view" />
+    </td>
+    <td width="50%">
+      <strong>Board overview</strong><br /><br />
+      <img src="docs/screenshots/board-overview.png" alt="Taskora Kanban board" />
+    </td>
+  </tr>
+</table>
 
 ## Download
 
-Prebuilt desktop packages are available from [GitHub Releases](https://github.com/HexCore99/CliTo/releases). On Windows, download the latest `.exe` or `.msi` installer. Release builds may also include Linux packages.
+Get the latest installer from [GitHub Releases](https://github.com/HexCore99/taskora/releases). Windows releases include an `.exe` installer and an `.msi` package. Other platform bundles are published when available.
 
-## Run Locally
+## Run from source
 
 ### Prerequisites
 
 - [Bun](https://bun.sh/)
 - [Rust](https://www.rust-lang.org/tools/install)
-- The platform-specific dependencies required by [Tauri](https://v2.tauri.app/start/prerequisites/)
+- The platform prerequisites from the [Tauri documentation](https://v2.tauri.app/start/prerequisites/)
 
-### Install and start
+### Start the desktop app
 
 ```bash
-git clone https://github.com/HexCore99/CliTo.git
-cd CliTo
+git clone https://github.com/HexCore99/taskora.git
+cd taskora
 bun install
 bun run tauri dev
 ```
 
-CliTo uses Tauri commands to access its local database, so run it through `bun run tauri dev` rather than a browser-only Vite preview.
+Taskora uses Tauri commands for local persistence, so run it through `bun run tauri dev` rather than a browser-only Vite preview.
 
-### Production build
+### Create a production build
 
 ```bash
 bun run tauri build
 ```
 
-Generated installers and bundles are written to:
+The generated installers and platform bundles are written to:
 
 ```text
 src-tauri/target/release/bundle/
 ```
 
-## How It Works
+## Local data and privacy
+
+Taskora is local-first. It has no account system or cloud sync: your task data stays on your device.
+
+On Windows, Taskora stores its files in:
 
 ```text
-React interface
-      |
-      v
-Zustand stores
-      |
-      v
-Tauri commands
-      |
-      v
-Rust persistence layer
-      |
-      v
-SQLite task database + YAML UI preferences
+%APPDATA%\com.hexcr.taskora\
 ```
 
-The React interface handles interaction and presentation. Zustand keeps the visible board in sync, while Rust owns local persistence through Tauri commands.
+| File | Purpose |
+| --- | --- |
+| `todo.db` | SQLite database containing projects, boards, tasks, task notes, and their ordering. |
+| `ui_config.yaml` | Theme, sidebar state, column sorting, and default task priority. |
 
-## Project Structure
+To back up your data, copy this folder while Taskora is closed.
 
-```text
-src/
-  components/                 Board, task, project navigation, and reusable UI
-  components/trash/           Trash list, empty state, and confirmation dialog
-  stores/                     Zustand stores for tasks, boards, projects, sorting, and trash
+## Tech stack
 
-src-tauri/
-  src/db.rs                   SQLite connection, schema, and migrations
-  src/tasks.rs                Task, sorting, due-date, priority, and Trash commands
-  src/projects.rs             Project and board persistence commands
-  src/ui_config.rs            Persisted sidebar and sorting preferences
-  tauri.conf.json             Desktop application configuration
+| Layer | Technology |
+| --- | --- |
+| Desktop runtime | [Tauri 2](https://v2.tauri.app/) and Rust |
+| Interface | React 19 and Vite |
+| State | Zustand |
+| Storage | SQLite via Rusqlite and YAML preferences |
+| Drag and drop | dnd-kit |
+| Styling | Tailwind CSS, Radix UI, and Lucide icons |
+| Package manager | Bun |
 
-.github/workflows/
-  rust.yml                    Rust checks and tests
-  release.yaml                Desktop release builds
-```
-
-## Local Data
-
-CliTo keeps its data in your operating system's application-data directory:
-
-- `todo.db` - SQLite database containing projects, boards, and tasks.
-- `ui_config.yaml` - sidebar and sorting preferences.
-
-On Windows, the default location is:
+## Project structure
 
 ```text
-%APPDATA%\com.hexcr.clito\
+src/                     React interface, components, hooks, and Zustand stores
+src-tauri/src/           Rust commands, SQLite schema, migrations, and UI config
+src-tauri/icons/         Application icons for desktop platforms
+docs/screenshots/        README screenshots
+.github/workflows/       CI and release automation
 ```
 
 ## Contributing
 
-Ideas, bug reports, and pull requests are welcome. Please open an [issue](https://github.com/HexCore99/CliTo/issues) to discuss substantial changes before starting work.
+Ideas, bug reports, and pull requests are welcome. For substantial changes, please open an [issue](https://github.com/HexCore99/taskora/issues) first so the approach can be discussed.

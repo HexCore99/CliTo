@@ -29,7 +29,7 @@ function NoteItem({ note, onToggle, onTextChange, onRemove }) {
         aria-label="Note text"
         className={
           "min-w-0 flex-1 border-0 bg-transparent py-1 text-sm outline-none " +
-          (note.completed ? "text-slate-400 line-through" : "text-slate-700")
+          (note.completed ? "text-muted-foreground/60 line-through" : "text-foreground")
         }
         onChange={(event) => onTextChange(note.id, event.target.value)}
       />
@@ -37,7 +37,7 @@ function NoteItem({ note, onToggle, onTextChange, onRemove }) {
         type="button"
         title="Remove note"
         aria-label={"Remove " + note.text}
-        className="flex size-7 items-center justify-center rounded-md text-slate-400 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 focus-visible:opacity-100"
+        className="flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/40 group-hover:opacity-100 focus-visible:opacity-100"
         onClick={() => onRemove(note.id)}
       >
         <XIcon size={15} />
@@ -79,9 +79,9 @@ export default function TaskNotes({ notes, onChange }) {
 
   return (
     <section>
-      <h3 className="mb-2 text-sm font-medium text-slate-700">Notes</h3>
+      <h3 className="mb-2 text-sm font-medium text-foreground">Notes</h3>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="rounded-xl border border-border bg-card p-4">
         <div className="space-y-3">
           {notes.map((note) => (
             <NoteItem
@@ -95,7 +95,7 @@ export default function TaskNotes({ notes, onChange }) {
         </div>
 
         {notes.length === 0 && !isAdding && (
-          <p className="text-sm text-slate-400">No notes yet.</p>
+          <p className="text-sm text-muted-foreground">No notes yet.</p>
         )}
 
         {isAdding && (
@@ -105,7 +105,7 @@ export default function TaskNotes({ notes, onChange }) {
               type="text"
               value={newNote}
               placeholder="Write a note"
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:focus:ring-orange-950"
               onChange={(event) => setNewNote(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") addNote();

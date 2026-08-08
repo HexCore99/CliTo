@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import TaskBoard from "./components/TaskBoard";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTaskStore } from "./stores/useTaskStore";
 import { useSortingStore } from "./stores/useSortingStore";
@@ -14,6 +14,7 @@ import { useBoardStore } from "./stores/useBoardStore";
 import {useTrashStore} from "./stores/useTrashStore"
 import TrashBoard from "./components/TrashBoard";
 import { useProjectStore } from "./stores/useProjectStore";
+import Settings from "./Settings";
 
 export default function App() {
   const [uiConfig, setUiConfig] = useState(null);
@@ -47,8 +48,30 @@ export default function App() {
     loadInitialSorting();
   }, [loadProjects, loadInitialSorting]);
 
+  const selectedTheme = uiConfig?.appearance?.theme ?? "system";
+
+  useLayoutEffect(() => {
+    if (!uiConfig) return undefined;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      const isDark =
+        selectedTheme === "dark" ||
+        (selectedTheme === "system" && mediaQuery.matches);
+
+      document.documentElement.classList.toggle("dark", isDark);
+    };
+
+    applyTheme();
+
+    if (selectedTheme !== "system") return undefined;
+
+    mediaQuery.addEventListener("change", applyTheme);
+    return () => mediaQuery.removeEventListener("change", applyTheme);
+  }, [selectedTheme, uiConfig]);
+
   useEffect(() => {
-    if (boardState.type === "trash") return;
+    if (boardState.type === "trash" || boardState.type === "settings") return;
 
     if (boardState.type === "today") {
       getTodayTasks();
@@ -125,7 +148,13 @@ export default function App() {
 
           <main className="p-6"></main>
 
-          {boardState.type === "trash" ? <TrashBoard /> : <TaskBoard />}
+          {boardState.type === "settings" ? (
+            <Settings config={uiConfig} onConfigChange={saveUiConfig} />
+          ) : boardState.type === "trash" ? (
+            <TrashBoard />
+          ) : (
+            <TaskBoard defaultTaskPriority={uiConfig.taskDefaults.priority} />
+          )}
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

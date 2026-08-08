@@ -281,7 +281,9 @@ pub fn create_task(
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    let id = chrono::Utc::now().timestamp_millis(); // chrono -> time library
+    let now = chrono::Utc::now();
+    let id = now.timestamp_millis(); // chrono -> time library
+    let creation_date = now.to_rfc3339();
 
     if let Some(selected_board_id) = board_id {
         let board_exists: bool = tx
@@ -318,8 +320,8 @@ pub fn create_task(
     // insert with new pos
     tx.execute(
         "INSERT INTO tasks
-                 (id,board_id,name,status,position,priority,due_date,description)
-                 VALUES(?,?,?,?,?,?,?,?)",
+                 (id,board_id,name,status,position,priority,due_date,description,creation_date)
+                 VALUES(?,?,?,?,?,?,?,?,?)",
         params![
             id,
             board_id,
@@ -328,7 +330,8 @@ pub fn create_task(
             0,
             priority,
             due_date,
-            description
+            description,
+            creation_date
         ],
     )
     .map_err(|err| err.to_string())?;
