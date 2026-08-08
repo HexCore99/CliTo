@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src-tauri/icons/icon.png" width="96" alt="Taskora logo" />
+  <img src="docs/assets/taskora-wordmark.png" width="320" alt="Taskora logo" />
 </p>
 
 <h1 align="center">Taskora</h1>
