@@ -21,6 +21,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { Input } from "@/components/ui/input";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useBoardStore } from "@/stores/useBoardStore";
 import TrashConfirmDialog from "@/components/trash/TrashConfirmDialog";
@@ -81,6 +82,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
     event.preventDefault();
     event.stopPropagation();
     clearError();
+    onNavItemOpenChange?.(`project:${projectId}`, true);
     setBoardName("");
     setCreatingBoardFor(projectId);
   }
@@ -181,7 +183,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
         {isCreatingProject && (
           <SidebarMenuItem className="mb-2">
             <form onSubmit={handleCreateProject}>
-              <input
+              <Input
                 autoFocus
                 type="text"
                 value={projectName}
@@ -194,7 +196,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                     clearError();
                   }
                 }}
-                className="h-8 w-full rounded-md border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="h-8 px-2 text-sm"
               />
             </form>
           </SidebarMenuItem>
@@ -289,7 +291,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                           handleCreateBoard(event, project.id)
                         }
                       >
-                        <input
+                        <Input
                           autoFocus
                           type="text"
                           value={boardName}
@@ -302,7 +304,7 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                               clearError();
                             }
                           }}
-                          className="h-7 w-full rounded-md border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-ring"
+                          className="h-7 px-2 text-xs md:text-xs"
                         />
                       </form>
                     </SidebarMenuSubItem>
