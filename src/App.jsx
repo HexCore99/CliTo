@@ -75,13 +75,21 @@ export default function App() {
   useEffect(() => {
     if (boardState.type === "trash" || boardState.type === "settings") return;
 
+    async function loadFilteredTasks(loadTasksForView) {
+      const loaded = await loadTasksForView();
+
+      if (loaded) {
+        await applyCurrentSorting(null, true);
+      }
+    }
+
     if (boardState.type === "today") {
-      getTodayTasks();
+      loadFilteredTasks(getTodayTasks);
       return;
     }
 
     if (boardState.type === "upcoming") {
-      getUpcomingTasks();
+      loadFilteredTasks(getUpcomingTasks);
       return;
     }
 

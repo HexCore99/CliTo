@@ -59,6 +59,8 @@ export const useSortingStore = create((set, get) => ({
     includeAll = useTaskStore.getState().currentIncludeAll,
     persistConfig = true,
   ) => {
+    const taskView = useTaskStore.getState().currentTaskView;
+
     set((state) => ({
       sortOptions: {
         ...state.sortOptions,
@@ -71,11 +73,13 @@ export const useSortingStore = create((set, get) => ({
       sortOption,
       boardId,
       includeAll,
+      taskView,
     });
 
     if (
       useTaskStore.getState().currentBoardId !== boardId ||
-      useTaskStore.getState().currentIncludeAll !== includeAll
+      useTaskStore.getState().currentIncludeAll !== includeAll ||
+      useTaskStore.getState().currentTaskView !== taskView
     ) {
       return sortedTasks;
     }
@@ -94,8 +98,11 @@ export const useSortingStore = create((set, get) => ({
 
   applyCurrentSorting: async (boardId, includeAll) => {
     const sortOptions = get().sortOptions;
+    const taskView = useTaskStore.getState().currentTaskView;
 
     for (const [columnName, sortOption] of Object.entries(sortOptions)) {
+      if (useTaskStore.getState().currentTaskView !== taskView) return;
+
       await get().sortColumn(
         columnName,
         sortOption,

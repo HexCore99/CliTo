@@ -127,7 +127,7 @@ pub fn get_today_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    let now = chrono::Utc::now();
+    let now = chrono::Local::now();
     let today = now.date_naive();
 
     let mut stmt = tx
@@ -137,7 +137,7 @@ pub fn get_today_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
             FROM tasks
             WHERE in_trash = 0
             AND due_date = ?
-            ORDER BY position ASC
+            ORDER BY creation_date DESC, id DESC
             ",
         )
         .map_err(|e| e.to_string())?;
@@ -172,8 +172,8 @@ pub fn get_upcoming_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    let now = chrono::Utc::now();
-    let today = now.naive_utc();
+    let now = chrono::Local::now();
+    let today = now.date_naive();
 
     let mut stmt = tx
         .prepare(
@@ -182,7 +182,7 @@ pub fn get_upcoming_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
             FROM tasks
             WHERE in_trash = 0
             AND due_date > ?
-            ORDER BY position ASC
+            ORDER BY creation_date DESC, id DESC
             ",
         )
         .map_err(|e| e.to_string())?;
@@ -614,29 +614,44 @@ pub fn sort_tasks(
     sort_option: String,
     board_id: Option<i64>,
     include_all: bool,
+    task_view: String,
 ) -> Result<Vec<Task>, String> {
     if !matches!(column_name.as_str(), "todo" | "in-progress" | "completed") {
         return Err(format!("Invalid column name: {}", column_name));
-    };
+    }
+
+    if !matches!(task_view.as_str(), "board" | "today" | "upcoming") {
+        return Err(format!("Invalid task view: {}", task_view));
+    }
 
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|err| err.to_string())?;
 
     let order_by_clause = match sort_option.as_str() {
+        "default" if task_view != "board" || include_all => "creation_date DESC, id DESC",
         "default" => "position ASC",
-        "date-asc" => "CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC",
-        "date-desc" => " CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date DESC",
+        "date-asc" => {
+            "CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, creation_date DESC, id DESC"
+        }
+        "date-desc" => {
+            "CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date DESC, creation_date DESC, id DESC"
+        }
         "priority-high" => "priority ASC",
         "priority-low" => "priority DESC",
         _ => return Err(format!("Unknown sort option: {}", sort_option)),
     };
 
+    let today = chrono::Local::now().date_naive();
     let query = format!(
         "SELECT id,board_id,name,status,position,priority,due_date,description
          FROM tasks
-         WHERE status = ?
-         AND (? = 1 OR board_id IS ?)
+         WHERE status = ?1
          AND in_trash = 0
+         AND (
+            (?2 = 'today' AND due_date = ?3)
+            OR (?2 = 'upcoming' AND due_date > ?3)
+            OR (?2 = 'board' AND (?4 = 1 OR board_id IS ?5))
+         )
          ORDER BY {}",
         order_by_clause
     );
@@ -644,19 +659,22 @@ pub fn sort_tasks(
     let mut stmt = tx.prepare(&query).map_err(|err| err.to_string())?;
 
     let tasks = stmt
-        .query_map(params![column_name, include_all, board_id], |row| {
-            Ok(Task {
-                id: row.get(0)?,
-                board_id: row.get(1)?,
-                name: row.get(2)?,
-                status: row.get(3)?,
-                position: row.get(4)?,
-                priority: row.get(5)?,
-                due_date: row.get(6)?,
-                description: row.get(7)?,
-                notes: Vec::new(),
-            })
-        })
+        .query_map(
+            params![column_name, task_view, today, include_all, board_id],
+            |row| {
+                Ok(Task {
+                    id: row.get(0)?,
+                    board_id: row.get(1)?,
+                    name: row.get(2)?,
+                    status: row.get(3)?,
+                    position: row.get(4)?,
+                    priority: row.get(5)?,
+                    due_date: row.get(6)?,
+                    description: row.get(7)?,
+                    notes: Vec::new(),
+                })
+            },
+        )
         .map_err(|err| err.to_string())?
         .collect::<Result<Vec<Task>, _>>()
         .map_err(|err| err.to_string())?;
