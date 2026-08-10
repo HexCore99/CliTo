@@ -288,6 +288,30 @@ export const useTaskStore = create((set, get) => ({
     return true;
   },
 
+  getSearchTasks: async () => {
+    set({
+      currentBoardId: null,
+      currentIncludeAll: true,
+      currentTaskView: "search",
+      tasks: createTaskColumns(),
+    });
+
+    const tasksFromDB = await invoke("get_tasks", {
+      boardId: null,
+      includeAll: true,
+    });
+
+    if (get().currentTaskView !== "search") {
+      return false;
+    }
+
+    set({
+      tasks: groupTasksByStatus(tasksFromDB),
+    });
+
+    return true;
+  },
+
   createTask: async (task) => {
     const name = task.name;
     const status = task.status ?? "todo";

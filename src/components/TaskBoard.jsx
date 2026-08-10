@@ -183,6 +183,17 @@ export default function TaskBoard({ defaultTaskPriority = 4 }) {
     setSelectedTaskId(null);
   }
 
+  async function handleCreateTask(task) {
+    await createTask(task);
+
+    const { sortOptions, sortColumn } = useSortingStore.getState();
+    const sortOption = sortOptions[task.status];
+
+    if (sortOption) {
+      await sortColumn(task.status, sortOption);
+    }
+  }
+
   const boardGridClassName = selectedTask
     ? "mt-6 grid w-full min-w-[1050px] grid-cols-[repeat(3,minmax(350px,1fr))] max-[1428px]:min-w-[calc(100%+416px)] max-[1428px]:pr-[416px]"
     : "mt-6 grid w-full min-w-[1050px] grid-cols-[repeat(3,minmax(350px,1fr))]";
@@ -245,7 +256,7 @@ export default function TaskBoard({ defaultTaskPriority = 4 }) {
                     <CreateTask
                       colStatus={column.status}
                       defaultPriority={defaultTaskPriority}
-                      onAdd={createTask}
+                      onAdd={handleCreateTask}
                     />
 
                   {columnTasks.length === 0 && (

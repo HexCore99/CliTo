@@ -15,6 +15,7 @@ import {useTrashStore} from "./stores/useTrashStore"
 import TrashBoard from "./components/TrashBoard";
 import { useProjectStore } from "./stores/useProjectStore";
 import Settings from "./Settings";
+import SearchBoard from "./components/SearchBoard";
 
 export default function App() {
   const [uiConfig, setUiConfig] = useState(null);
@@ -22,6 +23,7 @@ export default function App() {
   const loadTasks = useTaskStore((state) => state.loadTasks);
   const getTodayTasks = useTaskStore((state) => state.getTodayTasks);
   const getUpcomingTasks = useTaskStore((state) => state.getUpcomingTasks);
+  const getSearchTasks = useTaskStore((state) => state.getSearchTasks);
   const boardState = useBoardStore((state) => state.states);
   const loadProjects = useProjectStore((state) => state.loadProjects);
 
@@ -73,13 +75,26 @@ export default function App() {
   useEffect(() => {
     if (boardState.type === "trash" || boardState.type === "settings") return;
 
+    async function loadFilteredTasks(loadTasksForView) {
+      const loaded = await loadTasksForView();
+
+      if (loaded) {
+        await applyCurrentSorting(null, true);
+      }
+    }
+
     if (boardState.type === "today") {
-      getTodayTasks();
+      loadFilteredTasks(getTodayTasks);
       return;
     }
 
     if (boardState.type === "upcoming") {
-      getUpcomingTasks();
+      loadFilteredTasks(getUpcomingTasks);
+      return;
+    }
+
+    if (boardState.type === "search") {
+      getSearchTasks();
       return;
     }
 
@@ -101,6 +116,7 @@ export default function App() {
     loadTasks,
     getTodayTasks,
     getUpcomingTasks,
+    getSearchTasks,
     applyCurrentSorting,
   ]);
 
@@ -152,6 +168,8 @@ export default function App() {
             <Settings config={uiConfig} onConfigChange={saveUiConfig} />
           ) : boardState.type === "trash" ? (
             <TrashBoard />
+          ) : boardState.type === "search" ? (
+            <SearchBoard />
           ) : (
             <TaskBoard defaultTaskPriority={uiConfig.taskDefaults.priority} />
           )}

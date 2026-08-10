@@ -11,12 +11,18 @@
 <p align="center">
   <a href="https://github.com/HexCore99/taskora/releases">Download</a>
   ·
+  <a href="#demo">Demo</a>
+  ·
   <a href="#run-from-source">Run from source</a>
   ·
   <a href="#features">Features</a>
 </p>
 
 ![Taskora board overview](docs/screenshots/board-overview.png)
+
+## Demo
+
+[Watch or download the Taskora overview demo](<demo/Taskora-Overview-2026-08-10 19-23-54.mkv>).
 
 ## Why Taskora?
 
