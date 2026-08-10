@@ -297,6 +297,11 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
                           value={boardName}
                           placeholder="Board name"
                           onChange={(event) => setBoardName(event.target.value)}
+                          onBlur={() => {
+                            setBoardName("");
+                            setCreatingBoardFor(null);
+                            clearError();
+                          }}
                           onKeyDown={(event) => {
                             if (event.key === "Escape") {
                               setBoardName("");

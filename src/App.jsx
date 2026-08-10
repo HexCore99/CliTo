@@ -15,6 +15,7 @@ import {useTrashStore} from "./stores/useTrashStore"
 import TrashBoard from "./components/TrashBoard";
 import { useProjectStore } from "./stores/useProjectStore";
 import Settings from "./Settings";
+import SearchBoard from "./components/SearchBoard";
 
 export default function App() {
   const [uiConfig, setUiConfig] = useState(null);
@@ -22,6 +23,7 @@ export default function App() {
   const loadTasks = useTaskStore((state) => state.loadTasks);
   const getTodayTasks = useTaskStore((state) => state.getTodayTasks);
   const getUpcomingTasks = useTaskStore((state) => state.getUpcomingTasks);
+  const getSearchTasks = useTaskStore((state) => state.getSearchTasks);
   const boardState = useBoardStore((state) => state.states);
   const loadProjects = useProjectStore((state) => state.loadProjects);
 
@@ -83,6 +85,11 @@ export default function App() {
       return;
     }
 
+    if (boardState.type === "search") {
+      getSearchTasks();
+      return;
+    }
+
     const boardId = boardState.type === "board" ? boardState.boardId : null;
     const includeAll = boardState.type === "general";
 
@@ -101,6 +108,7 @@ export default function App() {
     loadTasks,
     getTodayTasks,
     getUpcomingTasks,
+    getSearchTasks,
     applyCurrentSorting,
   ]);
 
@@ -152,6 +160,8 @@ export default function App() {
             <Settings config={uiConfig} onConfigChange={saveUiConfig} />
           ) : boardState.type === "trash" ? (
             <TrashBoard />
+          ) : boardState.type === "search" ? (
+            <SearchBoard />
           ) : (
             <TaskBoard defaultTaskPriority={uiConfig.taskDefaults.priority} />
           )}

@@ -34,8 +34,8 @@ const data = {
     },
     {
       title: "Search",
+      type: "search",
       icon: <SearchIcon />,
-      disabled: true,
     },
   ],
   utility: [

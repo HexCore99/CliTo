@@ -478,6 +478,16 @@ pub fn delete_from_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> {
     let tx = conn.transaction().map_err(|err| err.to_string())?;
 
     tx.execute(
+        "DELETE FROM notes
+         WHERE task_id IN (
+            SELECT id FROM tasks
+            WHERE id = ? AND in_trash = 1
+         )",
+        params![id],
+    )
+    .map_err(|err| err.to_string())?;
+
+    tx.execute(
         " DELETE FROM tasks
           WHERE id = ?
           AND in_trash = 1",
@@ -514,6 +524,15 @@ pub fn delete_from_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> {
 pub fn empty_trash(app: tauri::AppHandle) -> Result<(), String> {
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|err| err.to_string())?;
+
+    tx.execute(
+        "DELETE FROM notes
+         WHERE task_id IN (
+            SELECT id FROM tasks WHERE in_trash = 1
+         )",
+        [],
+    )
+    .map_err(|err| err.to_string())?;
 
     tx.execute(
         " DELETE FROM tasks
