@@ -94,7 +94,9 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
       type: "board",
       projectId: project.id,
       boardId: board.id,
+      justTaskId: null,
       title: board.name,
+      focusedTaskId: null,
     });
   }
 
@@ -135,7 +137,9 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
             type: "general",
             projectId: null,
             boardId: null,
+            justTaskId: null,
             title: "All Tasks",
+            focusedTaskId: null,
           });
         }
       } else {
@@ -148,7 +152,9 @@ export function NavProjects({ navOpenItems = {}, onNavItemOpenChange }) {
             type: "general",
             projectId: null,
             boardId: null,
+            justTaskId: null,
             title: "All Tasks",
+            focusedTaskId: null,
           });
         }
       }

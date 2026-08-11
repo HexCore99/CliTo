@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 mod db;
+mod just_tasks;
 mod projects;
 mod tasks;
 mod ui_config;
@@ -23,7 +24,11 @@ pub fn run() {
             projects::create_board,
             projects::delete_board,
             projects::delete_project,
+            just_tasks::get_just_task_boards,
+            just_tasks::create_just_task_board,
+            just_tasks::delete_just_task_board,
             tasks::get_tasks,
+            tasks::get_just_tasks,
             tasks::get_today_tasks,
             tasks::get_upcoming_tasks,
             tasks::get_trash_tasks,

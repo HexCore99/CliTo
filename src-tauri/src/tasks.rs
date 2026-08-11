@@ -23,6 +23,10 @@ pub struct Task {
     id: i64,
     #[serde(default)]
     board_id: Option<i64>,
+    #[serde(default)]
+    just_task: bool,
+    #[serde(default)]
+    just_task_id: Option<i64>,
     name: String,
     status: String,
     position: i32,
@@ -87,7 +91,7 @@ pub fn get_tasks(
     let mut stmt = tx
         .prepare(
             "
-            SELECT id,board_id,name,status,position,priority,due_date,description
+            SELECT id,board_id,name,status,position,priority,due_date,description,just_task,just_task_id
             FROM tasks
             WHERE in_trash = 0
             AND (? = 1 OR board_id IS ?)
@@ -107,12 +111,60 @@ pub fn get_tasks(
                 priority: row.get(5)?,
                 due_date: row.get(6)?,
                 description: row.get(7)?,
+                just_task: row.get(8)?,
+                just_task_id: row.get(9)?,
                 notes: Vec::new(),
             })
         })
         .map_err(|e| e.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
+
+    drop(stmt);
+    let tasks = get_task_with_note_handler(tasks, &tx)?;
+    tx.commit().map_err(|err| err.to_string())?;
+
+    Ok(tasks)
+}
+
+#[tauri::command]
+pub fn get_just_tasks(app: tauri::AppHandle, just_task_id: i64) -> Result<Vec<Task>, String> {
+    let mut conn = get_connection(&app)?;
+    let tx = conn.transaction().map_err(|err| err.to_string())?;
+
+    let mut stmt = tx
+        .prepare(
+            "
+            SELECT id,board_id,name,status,position,priority,due_date,description,just_task,just_task_id
+            FROM tasks
+            WHERE in_trash = 0
+            AND just_task = 1
+            AND just_task_id = ?
+            AND board_id IS NULL
+            ORDER BY position ASC
+            ",
+        )
+        .map_err(|err| err.to_string())?;
+
+    let tasks = stmt
+        .query_map(params![just_task_id], |row| {
+            Ok(Task {
+                id: row.get(0)?,
+                board_id: row.get(1)?,
+                name: row.get(2)?,
+                status: row.get(3)?,
+                position: row.get(4)?,
+                priority: row.get(5)?,
+                due_date: row.get(6)?,
+                description: row.get(7)?,
+                just_task: row.get(8)?,
+                just_task_id: row.get(9)?,
+                notes: Vec::new(),
+            })
+        })
+        .map_err(|err| err.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|err| err.to_string())?;
 
     drop(stmt);
     let tasks = get_task_with_note_handler(tasks, &tx)?;
@@ -133,7 +185,7 @@ pub fn get_today_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
     let mut stmt = tx
         .prepare(
             "
-            SELECT id,board_id,name,status,position,priority,due_date,description
+            SELECT id,board_id,name,status,position,priority,due_date,description,just_task,just_task_id
             FROM tasks
             WHERE in_trash = 0
             AND due_date = ?
@@ -153,6 +205,8 @@ pub fn get_today_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
                 priority: row.get(5)?,
                 due_date: row.get(6)?,
                 description: row.get(7)?,
+                just_task: row.get(8)?,
+                just_task_id: row.get(9)?,
                 notes: Vec::new(),
             })
         })
@@ -178,7 +232,7 @@ pub fn get_upcoming_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
     let mut stmt = tx
         .prepare(
             "
-            SELECT id,board_id,name,status,position,priority,due_date,description
+            SELECT id,board_id,name,status,position,priority,due_date,description,just_task,just_task_id
             FROM tasks
             WHERE in_trash = 0
             AND due_date > ?
@@ -198,6 +252,8 @@ pub fn get_upcoming_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
                 priority: row.get(5)?,
                 due_date: row.get(6)?,
                 description: row.get(7)?,
+                just_task: row.get(8)?,
+                just_task_id: row.get(9)?,
                 notes: Vec::new(),
             })
         })
@@ -219,7 +275,7 @@ pub fn get_trash_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
 
     let mut stmt = tx
         .prepare(
-            "SELECT id,board_id,name,status,position,priority,due_date,description
+            "SELECT id,board_id,name,status,position,priority,due_date,description,just_task,just_task_id
           FROM tasks
           WHERE in_trash = 1
           ORDER BY position ASC",
@@ -236,6 +292,8 @@ pub fn get_trash_tasks(app: tauri::AppHandle) -> Result<Vec<Task>, String> {
                 priority: row.get(5)?,
                 due_date: row.get(6)?,
                 description: row.get(7)?,
+                just_task: row.get(8)?,
+                just_task_id: row.get(9)?,
                 notes: Vec::new(),
             })
         })
@@ -258,6 +316,8 @@ pub fn create_task(
     due_date: Option<String>,
     description: Option<String>,
     board_id: Option<i64>,
+    just_task: bool,
+    just_task_id: Option<i64>,
 ) -> Result<(), String> {
     let name = name.trim();
 
@@ -271,6 +331,14 @@ pub fn create_task(
 
     if !(1..=4).contains(&priority) {
         return Err("Priority must be between 1 and 4".to_string());
+    }
+
+    if just_task && board_id.is_some() {
+        return Err("A JustTask cannot belong to a board".to_string());
+    }
+
+    if just_task != just_task_id.is_some() {
+        return Err("JustTask tasks require a JustTask board".to_string());
     }
 
     let description = description.and_then(|value| {
@@ -306,22 +374,43 @@ pub fn create_task(
         }
     }
 
+    if let Some(selected_just_task_id) = just_task_id {
+        let just_task_board_exists: bool = tx
+            .query_row(
+                "SELECT EXISTS(
+                    SELECT 1
+                    FROM just_task_boards
+                    WHERE id = ?
+                      AND in_trash = 0
+                )",
+                params![selected_just_task_id],
+                |row| row.get(0),
+            )
+            .map_err(|err| err.to_string())?;
+
+        if !just_task_board_exists {
+            return Err("The selected JustTask board does not exist".to_string());
+        }
+    }
+
     // Make room at the top of the destination column.
     tx.execute(
         "UPDATE tasks
          SET position = position + 1
          WHERE board_id IS ?
+         AND just_task = ?
+         AND just_task_id IS ?
          AND status = ?
          AND in_trash = 0",
-        params![board_id, status],
+        params![board_id, just_task, just_task_id, status],
     )
     .map_err(|e| e.to_string())?;
 
     // insert with new pos
     tx.execute(
         "INSERT INTO tasks
-                 (id,board_id,name,status,position,priority,due_date,description,creation_date)
-                 VALUES(?,?,?,?,?,?,?,?,?)",
+                 (id,board_id,name,status,position,priority,due_date,description,creation_date,just_task,just_task_id)
+                 VALUES(?,?,?,?,?,?,?,?,?,?,?)",
         params![
             id,
             board_id,
@@ -331,7 +420,9 @@ pub fn create_task(
             priority,
             due_date,
             description,
-            creation_date
+            creation_date,
+            just_task,
+            just_task_id
         ],
     )
     .map_err(|err| err.to_string())?;
@@ -347,14 +438,15 @@ pub fn update_position(
     tasks: Vec<Task>,
     board_id: Option<i64>,
     include_all: bool,
+    just_task_id: Option<i64>,
 ) -> Result<(), String> {
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    let mut positions: HashMap<(Option<i64>, String), i32> = HashMap::new();
+    let mut positions: HashMap<(Option<i64>, Option<i64>, String), i32> = HashMap::new();
 
     for task in tasks {
-        if !include_all && task.board_id != board_id {
+        if !include_all && (task.board_id != board_id || task.just_task_id != just_task_id) {
             return Err("Cannot reorder tasks from different boards".to_string());
         }
 
@@ -362,7 +454,7 @@ pub fn update_position(
             return Err(format!("Unknown task status: {}", task.status));
         }
 
-        let position_key = (task.board_id, task.status.clone());
+        let position_key = (task.board_id, task.just_task_id, task.status.clone());
         let next_position = positions.entry(position_key).or_insert(0);
         let position = *next_position;
         *next_position += 1;
@@ -371,8 +463,16 @@ pub fn update_position(
             "UPDATE tasks
              SET position = ?
              WHERE id = ?
-             AND board_id IS ?",
-            params![position, task.id, task.board_id],
+             AND board_id IS ?
+             AND just_task = ?
+             AND just_task_id IS ?",
+            params![
+                position,
+                task.id,
+                task.board_id,
+                task.just_task,
+                task.just_task_id
+            ],
         )
         .map_err(|err| err.to_string())?;
     }
@@ -433,14 +533,14 @@ pub fn restore_from_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> 
     let mut conn = get_connection(&app)?;
     let tx = conn.transaction().map_err(|err| err.to_string())?;
 
-    let board_id: Option<i64> = tx
+    let (board_id, just_task_id): (Option<i64>, Option<i64>) = tx
         .query_row(
-            "SELECT board_id
+            "SELECT board_id, just_task_id
              FROM tasks
              WHERE id = ?
              AND in_trash = 1",
             params![id],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?)),
         )
         .optional()
         .map_err(|err| err.to_string())?
@@ -460,6 +560,16 @@ pub fn restore_from_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> 
         tx.execute(
             "UPDATE boards SET in_trash = 0 WHERE id = ?",
             params![board_id],
+        )
+        .map_err(|err| err.to_string())?;
+    }
+
+    if let Some(just_task_id) = just_task_id {
+        tx.execute(
+            "UPDATE just_task_boards
+             SET in_trash = 0
+             WHERE id = ?",
+            params![just_task_id],
         )
         .map_err(|err| err.to_string())?;
     }
@@ -515,6 +625,17 @@ pub fn delete_from_trash(app: tauri::AppHandle, id: i64) -> Result<(), String> {
     )
     .map_err(|err| err.to_string())?;
 
+    tx.execute(
+        "DELETE FROM just_task_boards
+         WHERE in_trash = 1
+         AND NOT EXISTS (
+            SELECT 1 FROM tasks
+            WHERE tasks.just_task_id = just_task_boards.id
+         )",
+        [],
+    )
+    .map_err(|err| err.to_string())?;
+
     tx.commit().map_err(|err| err.to_string())?;
 
     Ok(())
@@ -542,6 +663,9 @@ pub fn empty_trash(app: tauri::AppHandle) -> Result<(), String> {
     .map_err(|err| err.to_string())?;
 
     tx.execute("DELETE FROM boards WHERE in_trash = 1", [])
+        .map_err(|err| err.to_string())?;
+
+    tx.execute("DELETE FROM just_task_boards WHERE in_trash = 1", [])
         .map_err(|err| err.to_string())?;
 
     tx.execute(
@@ -615,12 +739,16 @@ pub fn sort_tasks(
     board_id: Option<i64>,
     include_all: bool,
     task_view: String,
+    just_task_id: Option<i64>,
 ) -> Result<Vec<Task>, String> {
     if !matches!(column_name.as_str(), "todo" | "in-progress" | "completed") {
         return Err(format!("Invalid column name: {}", column_name));
     }
 
-    if !matches!(task_view.as_str(), "board" | "today" | "upcoming") {
+    if !matches!(
+        task_view.as_str(),
+        "board" | "just-tasks" | "today" | "upcoming"
+    ) {
         return Err(format!("Invalid task view: {}", task_view));
     }
 
@@ -628,7 +756,9 @@ pub fn sort_tasks(
     let tx = conn.transaction().map_err(|err| err.to_string())?;
 
     let order_by_clause = match sort_option.as_str() {
-        "default" if task_view != "board" || include_all => "creation_date DESC, id DESC",
+        "default" if !matches!(task_view.as_str(), "board" | "just-tasks") || include_all => {
+            "creation_date DESC, id DESC"
+        }
         "default" => "position ASC",
         "date-asc" => {
             "CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, creation_date DESC, id DESC"
@@ -643,7 +773,7 @@ pub fn sort_tasks(
 
     let today = chrono::Local::now().date_naive();
     let query = format!(
-        "SELECT id,board_id,name,status,position,priority,due_date,description
+        "SELECT id,board_id,name,status,position,priority,due_date,description,just_task,just_task_id
          FROM tasks
          WHERE status = ?1
          AND in_trash = 0
@@ -651,6 +781,7 @@ pub fn sort_tasks(
             (?2 = 'today' AND due_date = ?3)
             OR (?2 = 'upcoming' AND due_date > ?3)
             OR (?2 = 'board' AND (?4 = 1 OR board_id IS ?5))
+            OR (?2 = 'just-tasks' AND just_task = 1 AND just_task_id IS ?6 AND board_id IS NULL)
          )
          ORDER BY {}",
         order_by_clause
@@ -660,7 +791,14 @@ pub fn sort_tasks(
 
     let tasks = stmt
         .query_map(
-            params![column_name, task_view, today, include_all, board_id],
+            params![
+                column_name,
+                task_view,
+                today,
+                include_all,
+                board_id,
+                just_task_id
+            ],
             |row| {
                 Ok(Task {
                     id: row.get(0)?,
@@ -671,6 +809,8 @@ pub fn sort_tasks(
                     priority: row.get(5)?,
                     due_date: row.get(6)?,
                     description: row.get(7)?,
+                    just_task: row.get(8)?,
+                    just_task_id: row.get(9)?,
                     notes: Vec::new(),
                 })
             },

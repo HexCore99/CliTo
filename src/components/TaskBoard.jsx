@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { DndContext, closestCorners } from "@dnd-kit/core";
 import { invoke } from "@tauri-apps/api/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
@@ -15,6 +15,7 @@ import {
 import { useBoardStore } from "@/stores/useBoardStore";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useSortingStore } from "@/stores/useSortingStore";
+import { useJustTaskStore } from "@/stores/useJustTaskStore";
 import TaskColumn from "./TaskColumn";
 import Task from "./Task";
 import CreateTask from "./CreateTask";
@@ -27,7 +28,17 @@ const columns = [
   { title: "Completed", status: "completed" },
 ];
 
-function getTaskBreadcrumb(task, projects) {
+function getTaskBreadcrumb(task, projects, justTaskBoards) {
+  if (task.just_task_id != null) {
+    const justTaskBoard = justTaskBoards.find(
+      (candidate) => Number(candidate.id) === Number(task.just_task_id),
+    );
+
+    return justTaskBoard
+      ? ["JustTasks", justTaskBoard.name]
+      : ["JustTasks"];
+  }
+
   if (task.board_id == null) return ["All Tasks"];
 
   for (const project of projects) {
@@ -42,35 +53,37 @@ function getTaskBreadcrumb(task, projects) {
 }
 
 export default function TaskBoard({ defaultTaskPriority = 4 }) {
-  const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [boardScroll, setBoardScroll] = useState({ left: 0, max: 0 });
   const boardScrollRef = useRef(null);
   const boardGridRef = useRef(null);
 
   const tasks = useTaskStore((state) => state.tasks);
   const currentBoardId = useTaskStore((state) => state.currentBoardId);
+  const currentJustTaskId = useTaskStore(
+    (state) => state.currentJustTaskId,
+  );
   const currentIncludeAll = useTaskStore((state) => state.currentIncludeAll);
   const setTasks = useTaskStore((state) => state.setTasks);
   const createTask = useTaskStore((state) => state.createTask);
   const moveToTrash = useTaskStore((state) => state.moveToTrash);
 
   const boardState = useBoardStore((state) => state.states);
+  const setBoardState = useBoardStore((state) => state.set_state);
   const projects = useProjectStore((state) => state.projects);
+  const justTaskBoards = useJustTaskStore((state) => state.justTaskBoards);
+  const selectedTaskId = boardState.focusedTaskId ?? null;
 
   const visibleTasks = flattenTasks(tasks);
   const selectedTask = visibleTasks.find(
     (task) => Number(task.id) === Number(selectedTaskId),
   );
 
-  useEffect(() => {
-    setSelectedTaskId(null);
-  }, [boardState.type, boardState.boardId]);
-
-  useEffect(() => {
-    if (selectedTaskId != null && !selectedTask) {
-      setSelectedTaskId(null);
-    }
-  }, [selectedTaskId, selectedTask]);
+  function setSelectedTaskId(taskId) {
+    setBoardState({
+      ...boardState,
+      focusedTaskId: taskId ?? null,
+    });
+  }
 
 
   function getDropStatus(overId, taskList) {
@@ -156,6 +169,7 @@ export default function TaskBoard({ defaultTaskPriority = 4 }) {
       tasks: tasksToPersist,
       boardId: currentBoardId,
       includeAll: currentIncludeAll,
+      justTaskId: currentJustTaskId,
     });
     await invoke("update_task_status", {
       id: Number(activeTaskId),
@@ -286,7 +300,11 @@ export default function TaskBoard({ defaultTaskPriority = 4 }) {
         {selectedTask && (
           <TaskDetailsPanel
             task={selectedTask}
-            breadcrumb={getTaskBreadcrumb(selectedTask, projects)}
+            breadcrumb={getTaskBreadcrumb(
+              selectedTask,
+              projects,
+              justTaskBoards,
+            )}
             onClose={() => setSelectedTaskId(null)}
           />
         )}

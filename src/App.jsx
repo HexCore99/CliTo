@@ -24,6 +24,9 @@ export default function App() {
   const getTodayTasks = useTaskStore((state) => state.getTodayTasks);
   const getUpcomingTasks = useTaskStore((state) => state.getUpcomingTasks);
   const getSearchTasks = useTaskStore((state) => state.getSearchTasks);
+  const loadJustTaskBoard = useTaskStore(
+    (state) => state.loadJustTaskBoard,
+  );
   const boardState = useBoardStore((state) => state.states);
   const loadProjects = useProjectStore((state) => state.loadProjects);
 
@@ -75,11 +78,15 @@ export default function App() {
   useEffect(() => {
     if (boardState.type === "trash" || boardState.type === "settings") return;
 
-    async function loadFilteredTasks(loadTasksForView) {
+    async function loadFilteredTasks(
+      loadTasksForView,
+      includeAll = true,
+      justTaskId = null,
+    ) {
       const loaded = await loadTasksForView();
 
       if (loaded) {
-        await applyCurrentSorting(null, true);
+        await applyCurrentSorting(null, includeAll, justTaskId);
       }
     }
 
@@ -98,6 +105,15 @@ export default function App() {
       return;
     }
 
+    if (boardState.type === "just-tasks") {
+      loadFilteredTasks(
+        () => loadJustTaskBoard(boardState.justTaskId),
+        false,
+        boardState.justTaskId,
+      );
+      return;
+    }
+
     const boardId = boardState.type === "board" ? boardState.boardId : null;
     const includeAll = boardState.type === "general";
 
@@ -113,10 +129,12 @@ export default function App() {
   }, [
     boardState.type,
     boardState.boardId,
+    boardState.justTaskId,
     loadTasks,
     getTodayTasks,
     getUpcomingTasks,
     getSearchTasks,
+    loadJustTaskBoard,
     applyCurrentSorting,
   ]);
 
