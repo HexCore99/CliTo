@@ -18,11 +18,11 @@
   <a href="#features">Features</a>
 </p>
 
-![Taskora board overview](docs/screenshots/board-overview.png)
+![Taskora board overview](docs/screenshots/taskora_1.png)
 
 ## Demo
 
-[Watch or download the Taskora overview demo](<demo/Taskora-Overview-2026-08-10 19-23-54.mkv>).
+[Watch or download the Taskora overview demo](<docs/demo/Taskora-Overview-2026-08-10 19-23-54.mkv>).
 
 ## Why Taskora?
 
@@ -45,21 +45,21 @@ Taskora keeps your work organized without requiring an account or sending your d
   <tr>
     <td width="50%">
       <strong>Task details</strong><br /><br />
-      <img src="docs/screenshots/task-details.png" alt="Task details panel" />
+      <img src="docs/screenshots/taskora_2.png" alt="Taskora task details panel" />
     </td>
     <td width="50%">
       <strong>Settings</strong><br /><br />
-      <img src="docs/screenshots/settings.png" alt="Taskora settings page" />
+      <img src="docs/screenshots/taskora_3.png" alt="Taskora settings page" />
     </td>
   </tr>
   <tr>
     <td width="50%">
       <strong>Trash</strong><br /><br />
-      <img src="docs/screenshots/trash.png" alt="Taskora Trash view" />
+      <img src="docs/screenshots/taskora_4.png" alt="Taskora Trash view" />
     </td>
     <td width="50%">
-      <strong>Board overview</strong><br /><br />
-      <img src="docs/screenshots/board-overview.png" alt="Taskora Kanban board" />
+      <strong>Search</strong><br /><br />
+      <img src="docs/screenshots/taskora_5.png" alt="Taskora task search and details" />
     </td>
   </tr>
 </table>
@@ -135,6 +135,7 @@ src/                     React interface, components, hooks, and Zustand stores
 src-tauri/src/           Rust commands, SQLite schema, migrations, and UI config
 src-tauri/icons/         Application icons for desktop platforms
 docs/screenshots/        README screenshots
+docs/demo/               Product overview demo
 .github/workflows/       CI and release automation
 ```
 
