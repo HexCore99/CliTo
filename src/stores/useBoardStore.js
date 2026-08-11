@@ -5,7 +5,9 @@ export const useBoardStore = create((set) => ({
     type: "general",
     projectId: null,
     boardId: null,
+    justTaskId: null,
     title: "All Tasks",
+    focusedTaskId: null,
   },
 
   set_state: (newState) => {

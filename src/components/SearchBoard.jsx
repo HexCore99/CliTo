@@ -3,6 +3,7 @@ import { CalendarDays, FileSearch, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { flattenTasks, useTaskStore } from "@/stores/useTaskStore";
 import { useProjectStore } from "@/stores/useProjectStore";
+import { useJustTaskStore } from "@/stores/useJustTaskStore";
 import TaskDetailsPanel from "./task-details/TaskDetailsPanel";
 
 const statusLabels = {
@@ -17,7 +18,17 @@ const statusClasses = {
   completed: "bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-300",
 };
 
-function getTaskBreadcrumb(task, projects) {
+function getTaskBreadcrumb(task, projects, justTaskBoards) {
+  if (task.just_task_id != null) {
+    const justTaskBoard = justTaskBoards.find(
+      (candidate) => Number(candidate.id) === Number(task.just_task_id),
+    );
+
+    return justTaskBoard
+      ? ["JustTasks", justTaskBoard.name]
+      : ["JustTasks"];
+  }
+
   if (task.board_id == null) return ["All Tasks"];
 
   for (const project of projects) {
@@ -48,6 +59,7 @@ export default function SearchBoard() {
 
   const tasks = useTaskStore((state) => state.tasks);
   const projects = useProjectStore((state) => state.projects);
+  const justTaskBoards = useJustTaskStore((state) => state.justTaskBoards);
   const taskList = flattenTasks(tasks);
   const normalizedQuery = query.trim().toLocaleLowerCase();
 
@@ -121,7 +133,11 @@ export default function SearchBoard() {
 
               <div className="space-y-3">
                 {results.map((task) => {
-                  const breadcrumb = getTaskBreadcrumb(task, projects);
+                  const breadcrumb = getTaskBreadcrumb(
+                    task,
+                    projects,
+                    justTaskBoards,
+                  );
 
                   return (
                     <button
@@ -169,7 +185,11 @@ export default function SearchBoard() {
       {selectedTask && (
         <TaskDetailsPanel
           task={selectedTask}
-          breadcrumb={getTaskBreadcrumb(selectedTask, projects)}
+          breadcrumb={getTaskBreadcrumb(
+            selectedTask,
+            projects,
+            justTaskBoards,
+          )}
           onClose={() => setSelectedTaskId(null)}
         />
       )}

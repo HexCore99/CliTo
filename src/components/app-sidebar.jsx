@@ -1,5 +1,6 @@
 import { NavGeneral } from "@/components/nav-general";
 import { NavProjects } from "@/components/nav-projects";
+import { JustTasks } from "@/components/JustTasks";
 import {
   Sidebar,
   SidebarContent,
@@ -72,6 +73,8 @@ export function AppSidebar({
           navOpenItems={sidebarConfig?.navOpenItems}
           onNavItemOpenChange={onNavItemOpenChange}
         />
+
+        <JustTasks />
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">

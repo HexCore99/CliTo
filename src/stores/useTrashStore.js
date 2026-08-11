@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { useTaskStore } from "./useTaskStore";
 import { useProjectStore } from "./useProjectStore";
+import { useJustTaskStore } from "./useJustTaskStore";
 export const useTrashStore = create((set) => ({
   trashTasks: [],
 
@@ -19,6 +20,7 @@ export const useTrashStore = create((set) => ({
       ),
     }));
     await useProjectStore.getState().loadProjects();
+    await useJustTaskStore.getState().loadJustTaskBoards();
     await useTaskStore.getState().loadTasks();
   },
 

@@ -24,6 +24,7 @@ export const useSortingStore = create((set, get) => ({
 
     // sort all columns, cz default task loads in db-order
     const boardId = useTaskStore.getState().currentBoardId;
+    const justTaskId = useTaskStore.getState().currentJustTaskId;
     const includeAll = useTaskStore.getState().currentIncludeAll;
 
     for (const [columnName, sortOption] of Object.entries(newSortOptions)) {
@@ -32,6 +33,7 @@ export const useSortingStore = create((set, get) => ({
         sortOption,
         boardId,
         includeAll,
+        justTaskId,
         false,
       );
     }
@@ -57,6 +59,7 @@ export const useSortingStore = create((set, get) => ({
     sortOption,
     boardId = useTaskStore.getState().currentBoardId,
     includeAll = useTaskStore.getState().currentIncludeAll,
+    justTaskId = useTaskStore.getState().currentJustTaskId,
     persistConfig = true,
   ) => {
     const taskView = useTaskStore.getState().currentTaskView;
@@ -74,10 +77,12 @@ export const useSortingStore = create((set, get) => ({
       boardId,
       includeAll,
       taskView,
+      justTaskId,
     });
 
     if (
       useTaskStore.getState().currentBoardId !== boardId ||
+      useTaskStore.getState().currentJustTaskId !== justTaskId ||
       useTaskStore.getState().currentIncludeAll !== includeAll ||
       useTaskStore.getState().currentTaskView !== taskView
     ) {
@@ -96,7 +101,7 @@ export const useSortingStore = create((set, get) => ({
     return sortedTasks;
   },
 
-  applyCurrentSorting: async (boardId, includeAll) => {
+  applyCurrentSorting: async (boardId, includeAll, justTaskId = null) => {
     const sortOptions = get().sortOptions;
     const taskView = useTaskStore.getState().currentTaskView;
 
@@ -108,6 +113,7 @@ export const useSortingStore = create((set, get) => ({
         sortOption,
         boardId,
         includeAll,
+        justTaskId,
         false,
       );
     }

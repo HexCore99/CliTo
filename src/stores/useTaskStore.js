@@ -54,6 +54,7 @@ function moveTaskToColumn(tasksByStatus, taskId, newStatus) {
 export const useTaskStore = create((set, get) => ({
   tasks: createTaskColumns(),
   currentBoardId: null,
+  currentJustTaskId: null,
   currentIncludeAll: true,
   currentTaskView: "board",
 
@@ -78,6 +79,7 @@ export const useTaskStore = create((set, get) => ({
         ]),
       ),
     }));
+
   },
 
   applyTaskDraft: (taskId, changes) => {
@@ -90,6 +92,7 @@ export const useTaskStore = create((set, get) => ({
         ),
       ),
     }));
+
   },
 
   saveTaskDetails: async (originalTask, draft) => {
@@ -202,10 +205,12 @@ export const useTaskStore = create((set, get) => ({
         tasks: flattenTasks(updatedTasks),
         boardId: get().currentBoardId,
         includeAll: get().currentIncludeAll,
+        justTaskId: get().currentJustTaskId,
       });
     }
 
     set({ tasks: updatedTasks });
+
     return flattenTasks(updatedTasks).find(
       (task) => Number(task.id) === taskId,
     );
@@ -220,6 +225,7 @@ export const useTaskStore = create((set, get) => ({
 
     set({
       currentBoardId: selectedBoardId,
+      currentJustTaskId: null,
       currentIncludeAll: includeAll,
       currentTaskView: "board",
       tasks: createTaskColumns(),
@@ -245,9 +251,36 @@ export const useTaskStore = create((set, get) => ({
     return true;
   },
 
+  loadJustTaskBoard: async (justTaskId) => {
+    const selectedJustTaskId = Number(justTaskId);
+
+    set({
+      currentBoardId: null,
+      currentJustTaskId: selectedJustTaskId,
+      currentIncludeAll: false,
+      currentTaskView: "just-tasks",
+      tasks: createTaskColumns(),
+    });
+
+    const tasksFromDB = await invoke("get_just_tasks", {
+      justTaskId: selectedJustTaskId,
+    });
+
+    if (
+      get().currentTaskView !== "just-tasks" ||
+      get().currentJustTaskId !== selectedJustTaskId
+    ) {
+      return false;
+    }
+
+    set({ tasks: groupTasksByStatus(tasksFromDB) });
+    return true;
+  },
+
   getTodayTasks: async () => {
     set({
       currentBoardId: null,
+      currentJustTaskId: null,
       currentIncludeAll: true,
       currentTaskView: "today",
       tasks: createTaskColumns(),
@@ -270,6 +303,7 @@ export const useTaskStore = create((set, get) => ({
   getUpcomingTasks: async () => {
     set({
       currentBoardId: null,
+      currentJustTaskId: null,
       currentIncludeAll: true,
       currentTaskView: "upcoming",
       tasks: createTaskColumns(),
@@ -291,6 +325,7 @@ export const useTaskStore = create((set, get) => ({
   getSearchTasks: async () => {
     set({
       currentBoardId: null,
+      currentJustTaskId: null,
       currentIncludeAll: true,
       currentTaskView: "search",
       tasks: createTaskColumns(),
@@ -318,7 +353,10 @@ export const useTaskStore = create((set, get) => ({
     const priority = task.priority ?? 4;
     const due_date = task.due_date ?? null;
     const description = task.description ?? null;
-    const boardId = get().currentBoardId;
+    const activeView = get().currentTaskView;
+    const justTask = activeView === "just-tasks";
+    const boardId = justTask ? null : get().currentBoardId;
+    const justTaskId = justTask ? get().currentJustTaskId : null;
 
     await invoke("create_task", {
       name,
@@ -327,11 +365,13 @@ export const useTaskStore = create((set, get) => ({
       dueDate: due_date,
       description,
       boardId,
+      justTask,
+      justTaskId,
     });
 
-    const activeView = get().currentTaskView;
-
-    if (activeView === "today") {
+    if (activeView === "just-tasks") {
+      await get().loadJustTaskBoard(justTaskId);
+    } else if (activeView === "today") {
       await get().getTodayTasks();
     } else if (activeView === "upcoming") {
       await get().getUpcomingTasks();
@@ -353,6 +393,7 @@ export const useTaskStore = create((set, get) => ({
         ]),
       ),
     }));
+
   },
 
 
@@ -368,9 +409,22 @@ export const useTaskStore = create((set, get) => ({
       tasks: flattenTasks(updatedTasks),
       boardId: get().currentBoardId,
       includeAll: get().currentIncludeAll,
+      justTaskId: get().currentJustTaskId,
     });
 
-    await get().loadTasks();
+    const activeView = get().currentTaskView;
+
+    if (activeView === "just-tasks") {
+      await get().loadJustTaskBoard(get().currentJustTaskId);
+    } else if (activeView === "today") {
+      await get().getTodayTasks();
+    } else if (activeView === "upcoming") {
+      await get().getUpcomingTasks();
+    } else if (activeView === "search") {
+      await get().getSearchTasks();
+    } else {
+      await get().loadTasks();
+    }
   },
 
   setTaskDescription: async (taskId, description) => {

@@ -17,7 +17,9 @@ export function NavGeneral({ items, className }) {
       type: item.type,
       projectId: null,
       boardId: null,
+      justTaskId: null,
       title: item.title,
+      focusedTaskId: null,
     });
   }
 
